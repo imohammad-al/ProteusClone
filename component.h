@@ -17,6 +17,9 @@ public:
     void addPin(class Pin *pin);
     void updatePins();
 
+    void updateConnections();
+
+
 private:
     int m_id;
     QList<class Pin*> m_pins;

@@ -5,6 +5,7 @@
 #include "node.h"
 #include <QGraphicsScene>
 #include <QString>
+#include <QMap>
 class MoveCommand;
 class Wire;
 class Pin;
@@ -40,6 +41,10 @@ protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
 
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
+
+    void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+
+    void keyPressEvent(QKeyEvent *event) override;
 
 
 private:

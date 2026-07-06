@@ -34,6 +34,7 @@ qt_add_executable(ProteusClone
     junction.h junction.cpp
     wiresegment.h
     net.h net.cpp
+    commands/addwirecommand.h commands/addwirecommand.cpp
 
 )
 

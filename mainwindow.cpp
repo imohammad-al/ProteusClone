@@ -174,7 +174,14 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
 
         return;
     }
+    if(event->key() == Qt::Key_Escape)
+    {
+        toolManager->setCurrentTool(Tool::Select);
 
+        scene->cancelPlacement();
+
+        return;
+    }
     //--------------------------------------
     // ROTATE → Undo/Redo Command
     //--------------------------------------

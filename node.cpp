@@ -1,5 +1,7 @@
 #include "node.h"
 #include "junction.h"
+#include "pin.h"
+#include "wire.h"
 Node::Node(QObject *parent)
     : QObject(parent)
 {
@@ -110,4 +112,9 @@ Net *Node::net() const
 void Node::setNet(Net *net)
 {
     m_net = net;
+}
+
+const QList<Wire*> &Node::wires() const
+{
+    return m_wires;
 }

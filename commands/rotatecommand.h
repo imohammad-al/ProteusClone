@@ -2,7 +2,7 @@
 #define ROTATECOMMAND_H
 
 #include "commandbase.h"
-
+#include "../component.h"
 class QGraphicsItem;
 
 class RotateCommand : public CommandBase

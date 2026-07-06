@@ -4,10 +4,13 @@
 #include "wire.h"
 #include "pin.h"
 #include "commands/addcomponentcommand.h"
+#include "commands/movecommand.h"
+#include "commands/addwirecommand.h"
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QDebug>
-
+#include "net.h"
+#include <QKeyEvent>
 CircuitScene::CircuitScene(QObject *parent)
     : QGraphicsScene(parent)
 {
@@ -74,21 +77,7 @@ void CircuitScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
     if(m_drawingWire && m_currentWire)
     {
-        QVector<QPointF> pts = m_currentWire->points();
-
-        if(pts.size() < 2)
-        {
-            pts.clear();
-            pts << m_startPin->scenePos()
-                << event->scenePos();
-
-            m_currentWire->setPoints(pts);
-        }
-        else
-        {
-            pts.last() = event->scenePos();
-            m_currentWire->setPoints(pts);
-        }
+        m_currentWire->setEndPoint(event->scenePos());
     }
 
     QGraphicsScene::mouseMoveEvent(event);
@@ -199,9 +188,9 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
             return;
         }
 
-        /////////////////////////////////////////////////
+        //-----------------------------------------
         // FIRST CLICK
-        /////////////////////////////////////////////////
+        //-----------------------------------------
 
         if(!m_drawingWire)
         {
@@ -211,12 +200,12 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
             m_currentWire->setStartPin(pin);
 
-            QVector<QPointF> pts;
+            QPointF p = pin->scenePos();
 
-            pts << pin->scenePos()
-                << pin->scenePos();
+            m_currentWire->setStartPoint(p);
+            m_currentWire->setEndPoint(p);
 
-            m_currentWire->setPoints(pts);
+            m_currentWire->rebuildGeometry();
 
             addItem(m_currentWire);
 
@@ -225,9 +214,9 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
             return;
         }
 
-        /////////////////////////////////////////////////
+        //-----------------------------------------
         // CANCEL
-        /////////////////////////////////////////////////
+        //-----------------------------------------
 
         if(pin == m_startPin)
         {
@@ -242,37 +231,34 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
             return;
         }
 
-        /////////////////////////////////////////////////
+        //-----------------------------------------
         // NODE SYSTEM
-        /////////////////////////////////////////////////
+        //-----------------------------------------
 
-        Node *node =
-            createOrGetNode(m_startPin,pin);
+        Node *node = createOrGetNode(m_startPin, pin);
 
         m_startPin->setNode(node);
 
         pin->setNode(node);
 
         if(node->junction())
-        {
             node->junction()->updatePosition();
-        }
 
-        /////////////////////////////////////////////////
+        //-----------------------------------------
         // FINISH WIRE
-        /////////////////////////////////////////////////
+        //-----------------------------------------
 
         m_currentWire->setEndPin(pin);
 
-        QVector<QPointF> pts = m_currentWire->points();
-
-        if(!pts.isEmpty())
-        {
-            pts.last() = pin->scenePos();
-            m_currentWire->setPoints(pts);
-        }
-
         m_currentWire->rebuildGeometry();
+
+        if(m_undoStack)
+        {
+            m_undoStack->push(
+                new AddWireCommand(
+                    this,
+                    m_currentWire));
+        }
 
         m_currentWire = nullptr;
 
@@ -282,7 +268,6 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
         return;
     }
-
     }
 
     QGraphicsScene::mousePressEvent(event);
@@ -550,4 +535,21 @@ void CircuitScene::mergeNodes(Node *a, Node *b)
     m_nodes.removeAll(b);
 
     delete b;
+}
+
+#include <QKeyEvent>
+
+void CircuitScene::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Escape)
+    {
+        cancelPlacement();
+
+        if(m_toolManager)
+            m_toolManager->setCurrentTool(Tool::Select);
+
+        return;
+    }
+
+    QGraphicsScene::keyPressEvent(event);
 }

@@ -2,6 +2,7 @@
 #include "wire.h"
 #include "node.h"
 #include "net.h"
+#include <QPainter>
 #include <QGraphicsSceneMouseEvent>
 
 Pin::Pin(QGraphicsItem *parent)

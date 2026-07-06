@@ -59,6 +59,11 @@ public:
     Net *net() const;
     void setNet(Net *net);
 
+    void addWire(Wire *wire);
+    void removeWire(Wire *wire);
+
+    const QList<Wire*> &wires() const;
+
 private:
 
     QList<Pin*> m_pins;
@@ -68,6 +73,8 @@ private:
     QPointF m_position;
 
     QString m_netName;
+
+    QList<Wire*> m_wires;
 
     bool m_highlighted = false;
 

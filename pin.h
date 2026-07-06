@@ -22,6 +22,8 @@ public:
 
     Node *node() const;
     void setNode(Node *node);
+    void updateWires();
+
 
 private:
     QList<Wire*> m_wires;
