@@ -1,0 +1,22 @@
+# ninja log v7
+31	247	8047925237792195	ProteusClone_autogen/timestamp	67358bfdc784eff8
+31	247	8047925237792195	ProteusClone_autogen/mocs_compilation.cpp	67358bfdc784eff8
+31	247	8047925237792195	A:/Projects/QTProjects/ProteusClone/ProteusClone/build/Desktop_x86_windows_msys_pe_64bit_Debug/ProteusClone_autogen/timestamp	67358bfdc784eff8
+31	247	8047925237792195	A:/Projects/QTProjects/ProteusClone/ProteusClone/build/Desktop_x86_windows_msys_pe_64bit_Debug/ProteusClone_autogen/mocs_compilation.cpp	67358bfdc784eff8
+6772	26651	8046928147139138	CMakeFiles/ProteusClone.dir/ProteusClone_autogen/mocs_compilation.cpp.obj	509d571cdb89689d
+1453	13072	8047902955425142	CMakeFiles/ProteusClone.dir/main.cpp.obj	1f781437e8bb1225
+253	9732	8047925240000616	CMakeFiles/ProteusClone.dir/mainwindow.cpp.obj	41680a06720d6c88
+28752	31759	8046928366947834	ProteusClone.exe	fb73573fece8ce2a
+16596	31804	8047007239443479	CMakeFiles/ProteusClone.dir/resistor.cpp.obj	5250b80247e338e9
+6791	24943	8046928147339008	CMakeFiles/ProteusClone.dir/circuitscene.cpp.obj	d62ba9ae3ce23b57
+1580	6718	8046283918324590	CMakeFiles/ProteusClone.dir/componentfactory.cpp.obj	f092c4e558fc5918
+9992	24100	8046906602572720	CMakeFiles/ProteusClone.dir/component.cpp.obj	a5f1d76e9f4f94b3
+2262	10804	8046819324069823	CMakeFiles/ProteusClone.dir/pin.cpp.obj	15662b7c845d2a01
+2268	10635	8046819324129783	CMakeFiles/ProteusClone.dir/wire.cpp.obj	1d7c5b2ca5484b19
+10001	22078	8046906602673301	CMakeFiles/ProteusClone.dir/circuit.cpp.obj	e8515effe7b7d330
+6491	14351	8045804894844951	CMakeFiles/ProteusClone.dir/toolmanager.cpp.obj	1260b14539904aaf
+16749	31823	8047007240984371	CMakeFiles/ProteusClone.dir/twoterminalcomponent.cpp.obj	8af952dc8620ef44
+16741	32266	8047007240892355	CMakeFiles/ProteusClone.dir/librarymanager.cpp.obj	a5cee4909a177933
+44	5912	8050146844523355	build.ninja	6a913ea282c66e0c
+44	5912	8050146844473297	A:/Projects/QTProjects/ProteusClone/ProteusClone/build/Desktop_x86_windows_msys_pe_64bit_Debug/cmake_install.cmake	6a913ea282c66e0c
+6797	23453	8046928147398969	CMakeFiles/ProteusClone.dir/commands/addcomponentcommand.cpp.obj	9800f89f6d2d6ef
