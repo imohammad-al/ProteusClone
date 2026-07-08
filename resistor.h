@@ -18,6 +18,14 @@ public:
     Pin *leftPin() const;
     Pin *rightPin() const;
 
+    QMap<QString, ComponentProperty> getProperties() const override;
+    void setProperties(const QMap<QString, QVariant>& newValues) override;
+
+private:
+
+    double m_resistanceValue = 1000.0; // مقدار پیش‌فرض ۱ کیلو اهم
+    QString m_label = "R1";
+
 
 
 };

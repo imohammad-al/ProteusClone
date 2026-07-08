@@ -36,6 +36,10 @@ private:
 
     QUndoStack *undoStack;
 
+    QString m_lastSelectedComponent = "Resistor"; // قطعه پیش‌فرض
+
+    void openComponentSelectionDialog();          // این تابع پنجره‌ی لیست قطعات را باز خواهد کرد
+
 private slots:
 
     void on_actionSelect_triggered();

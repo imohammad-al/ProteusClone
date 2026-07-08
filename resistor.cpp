@@ -29,7 +29,27 @@ void Resistor::paint(QPainter *painter,
     painter->drawLine(25,0,40,0);
 
 
-    painter->drawText(QPointF(-15,-15), reference());
+    // رسم نام قطعه (مثلاً R1 یا نام جدیدی که کاربر وارد کرده)
+    painter->drawText(QPointF(-10, -20), m_label);
+
+    // رسم مقدار مقاومت (مثلاً 1000 Ω) - اختیاری اگر دوست دارید نمایش داده شود
+    QString resistanceText = QString::number(m_resistanceValue) + " Ω";
+    painter->drawText(QPointF(-10, 30), resistanceText);
 }
 
 
+QMap<QString, ComponentProperty> Resistor::getProperties() const {
+    QMap<QString, ComponentProperty> props;
+    props["label"] = { "نام قطعه", m_label, "string", "" };
+    props["resistance"] = { "مقدار مقاومت", m_resistanceValue, "double", "Ω" };
+    return props;
+}
+
+void Resistor::setProperties(const QMap<QString, QVariant>& newValues) {
+    if (newValues.contains("label"))
+        m_label = newValues["label"].toString();
+    if (newValues.contains("resistance"))
+        m_resistanceValue = newValues["resistance"].toDouble();
+
+    update(); // این تابع ظاهر قطعه روی بوم را دوباره رسم می‌کند تا متن جدید دیده شود
+}

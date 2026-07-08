@@ -35,6 +35,12 @@ qt_add_executable(ProteusClone
     wiresegment.h
     net.h net.cpp
     commands/addwirecommand.h commands/addwirecommand.cpp
+    wirecontroller.h wirecontroller.cpp
+    wireitem.h wireitem.cpp
+    dynamicpropertiesdialog.h dynamicpropertiesdialog.cpp
+    capacitor.h capacitor.cpp
+    diode.h diode.cpp
+    dcsource.h dcsource.cpp
 
 )
 

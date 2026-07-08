@@ -3,6 +3,9 @@
 #include "componentfactory.h"
 #include "wire.h"
 #include "pin.h"
+#include "dynamicpropertiesdialog.h"
+#include <QGraphicsSceneMouseEvent>
+#include <QTransform>
 #include "commands/addcomponentcommand.h"
 #include "commands/movecommand.h"
 #include "commands/addwirecommand.h"
@@ -77,7 +80,12 @@ void CircuitScene::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
     if(m_drawingWire && m_currentWire)
     {
-        m_currentWire->setEndPoint(event->scenePos());
+        if(m_tempWirePoints.size() >= 2)
+        {
+            m_tempWirePoints.last() = event->scenePos();
+
+            m_currentWire->setPoints(m_tempWirePoints);
+        }
     }
 
     QGraphicsScene::mouseMoveEvent(event);
@@ -182,18 +190,19 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
     {
         Pin *pin = pinAt(event->scenePos());
 
-        if(!pin)
-        {
-            QGraphicsScene::mousePressEvent(event);
-            return;
-        }
+        //////////////////////////////////////////////////////
+        // شروع رسم سیم
+        //////////////////////////////////////////////////////
 
-        //-----------------------------------------
-        // FIRST CLICK
-        //-----------------------------------------
 
         if(!m_drawingWire)
         {
+            if(!pin)
+            {
+                QGraphicsScene::mousePressEvent(event);
+                return;
+            }
+
             m_startPin = pin;
 
             m_currentWire = new Wire();
@@ -205,37 +214,58 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
             m_currentWire->setStartPoint(p);
             m_currentWire->setEndPoint(p);
 
-            m_currentWire->rebuildGeometry();
-
             addItem(m_currentWire);
+
+            m_tempWirePoints.clear();
+            m_tempWirePoints << p << p;
+
+            m_currentWire->setPoints(m_tempWirePoints);
 
             m_drawingWire = true;
 
             return;
         }
 
-        //-----------------------------------------
-        // CANCEL
-        //-----------------------------------------
+        //////////////////////////////////////////////////////
+        // کلیک روی صفحه = ایجاد Corner
+        //////////////////////////////////////////////////////
+
+        if(!pin)
+        {
+            m_tempWirePoints.last() = event->scenePos();
+
+            m_tempWirePoints.push_back(event->scenePos());
+
+            m_currentWire->setPoints(m_tempWirePoints);
+
+            return;
+        }
+        //////////////////////////////////////////////////////
+        // لغو
+        //////////////////////////////////////////////////////
 
         if(pin == m_startPin)
         {
+            removeItem(m_currentWire);
+
             delete m_currentWire;
 
             m_currentWire = nullptr;
 
             m_startPin = nullptr;
 
+            m_tempWirePoints.clear();
+
             m_drawingWire = false;
 
             return;
         }
 
-        //-----------------------------------------
-        // NODE SYSTEM
-        //-----------------------------------------
+        //////////////////////////////////////////////////////
+        // Node
+        //////////////////////////////////////////////////////
 
-        Node *node = createOrGetNode(m_startPin, pin);
+        Node *node = createOrGetNode(m_startPin,pin);
 
         m_startPin->setNode(node);
 
@@ -244,25 +274,35 @@ void CircuitScene::mousePressEvent(QGraphicsSceneMouseEvent *event)
         if(node->junction())
             node->junction()->updatePosition();
 
-        //-----------------------------------------
-        // FINISH WIRE
-        //-----------------------------------------
+        //////////////////////////////////////////////////////
+        // پایان سیم
+        //////////////////////////////////////////////////////
+        m_tempWirePoints.last() = pin->scenePos();
 
+        m_currentWire->setPoints(m_tempWirePoints);
         m_currentWire->setEndPin(pin);
+
+        QVector<QPointF> pts;
+
+        pts << m_startPin->scenePos();
+
+        for(const QPointF &p : m_tempWirePoints)
+            pts << p;
+
+        pts << pin->scenePos();
+
+        m_currentWire->setPoints(pts);
 
         m_currentWire->rebuildGeometry();
 
         if(m_undoStack)
-        {
-            m_undoStack->push(
-                new AddWireCommand(
-                    this,
-                    m_currentWire));
-        }
+            m_undoStack->push(new AddWireCommand(this,m_currentWire));
 
         m_currentWire = nullptr;
 
         m_startPin = nullptr;
+
+        m_tempWirePoints.clear();
 
         m_drawingWire = false;
 
@@ -552,4 +592,48 @@ void CircuitScene::keyPressEvent(QKeyEvent *event)
     }
 
     QGraphicsScene::keyPressEvent(event);
+}
+
+
+void CircuitScene::cancelWireDrawing()
+{
+    if(!m_drawingWire)
+        return;
+
+    if(m_currentWire)
+    {
+        removeItem(m_currentWire);
+        delete m_currentWire;
+        m_currentWire = nullptr;
+    }
+
+    m_startPin = nullptr;
+    m_drawingWire = false;
+}
+
+
+void CircuitScene::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
+    // ۱. پیدا کردن شیئی که روی آن دبل‌کلیک شده است
+    QGraphicsItem *item = itemAt(event->scenePos(), QTransform());
+
+    // ۲. بررسی اینکه آیا این شیء یک قطعه (Component) است یا خیر
+    Component *comp = dynamic_cast<Component*>(item);
+
+    if (comp) {
+        // ۳. گرفتن ویژگی‌های فعلی قطعه
+        auto props = comp->getProperties();
+
+        // ۴. باز کردن پنجره هوشمندی که ساختیم
+        DynamicPropertiesDialog dialog(props);
+        if (dialog.exec() == QDialog::Accepted) {
+            // ۵. دریافت مقادیر جدید از پنجره در صورت فشرده شدن دکمه OK
+            auto newValues = dialog.getNewValues();
+
+            // ۶. اعمال مقادیر جدید به قطعه
+            comp->setProperties(newValues);
+        }
+    } else {
+        // اگر روی قطعه کلیک نشده بود، رفتار پیش‌فرض سیستمی اجرا شود
+        QGraphicsScene::mouseDoubleClickEvent(event);
+    }
 }

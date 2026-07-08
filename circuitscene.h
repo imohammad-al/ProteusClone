@@ -34,6 +34,8 @@ public:
 
     void mergeNodes(Node *a, Node *b);
 
+    void cancelWireDrawing();
+
 protected:
     void drawBackground(QPainter *painter,
                         const QRectF &rect) override;
@@ -45,6 +47,8 @@ protected:
     void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
 
     void keyPressEvent(QKeyEvent *event) override;
+
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 
 
 private:
@@ -75,6 +79,8 @@ private:
     Node* createOrGetNode(Pin *p1, Pin *p2);
 
     QList<Net*> m_nets;
+
+    QVector<QPointF> m_tempWirePoints;
 };
 
 #endif

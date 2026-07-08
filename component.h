@@ -2,7 +2,12 @@
 #define COMPONENT_H
 
 #include <QGraphicsObject>
-
+struct ComponentProperty {
+    QString label;       // نام نمایشی (مثلاً: Resistance)
+    QVariant value;      // مقدار (مثلاً: 1000 یا 5.0)
+    QString type;        // نوع جعبه متن (مثلاً: "double" یا "string")
+    QString unit;        // واحد اندازه گیری (مثلاً: "Ohm" یا "V")
+};
 class Component : public QGraphicsObject
 {
     Q_OBJECT
@@ -18,6 +23,9 @@ public:
     void updatePins();
 
     void updateConnections();
+
+    virtual QMap<QString, ComponentProperty> getProperties() const = 0;
+    virtual void setProperties(const QMap<QString, QVariant>& newValues) = 0;
 
 
 private:

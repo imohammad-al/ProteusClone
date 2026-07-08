@@ -113,15 +113,22 @@ void Wire::setEndNode(Node *node)
 void Wire::setStartPoint(const QPointF &point)
 {
     m_startPoint = point;
+
+    if(m_points.size()>=1)
+        m_points.first() = point;
+
     rebuildGeometry();
 }
 
 void Wire::setEndPoint(const QPointF &point)
 {
     m_endPoint = point;
+
+    if(m_points.size()>=2)
+        m_points.last() = point;
+
     rebuildGeometry();
 }
-
 QPointF Wire::startPoint() const
 {
     return m_startPoint;
@@ -388,20 +395,26 @@ void Wire::rebuildGeometry()
     if(m_endPin)
         m_endPoint = m_endPin->scenePos();
 
-    // فعلاً فقط یک خط مستقیم بین ابتدا و انتها
+    if(m_points.isEmpty())
+    {
+        m_points << m_startPoint
+                 << m_endPoint;
+    }
+    else
+    {
+        m_points.first() = m_startPoint;
+        m_points.last()  = m_endPoint;
+    }
+
     QPainterPath path;
 
-    path.moveTo(m_startPoint);
-    path.lineTo(m_endPoint);
+    path.moveTo(m_points.first());
+
+    for(int i=1;i<m_points.size();++i)
+        path.lineTo(m_points[i]);
 
     setPath(path);
 
-    // بروزرسانی نقاط
-    m_points.clear();
-    m_points << m_startPoint
-             << m_endPoint;
-
-    // بروزرسانی سگمنت‌ها
     buildSegments();
 }
 ////////////////////////////////////////////////////////////

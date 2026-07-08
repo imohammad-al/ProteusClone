@@ -1,4 +1,5 @@
 #include "componentfactory.h"
+#include "capacitor.h"
 
 QHash<QString,
       ComponentFactory::Creator>
