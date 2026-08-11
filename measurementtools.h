@@ -1,6 +1,6 @@
 #ifndef MEASUREMENTTOOLS_H
 #define MEASUREMENTTOOLS_H
-
+#include "digitallogic.h"
 #include "component.h"
 #include <QVector>
 

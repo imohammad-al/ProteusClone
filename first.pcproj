@@ -1,0 +1,310 @@
+{
+    "components": [
+        {
+            "category": "Advanced",
+            "id": "{3ae8ea45-bed8-49d6-a8af-d70e376a1149}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "EEPROM/RAM",
+            "x": 1970,
+            "y": 1620,
+            "zValue": 0
+        },
+        {
+            "category": "Advanced",
+            "id": "{4f514845-8081-4bcf-b50e-08393f460679}",
+            "name": "",
+            "properties": {
+                "conversionDelayTicks": 1
+            },
+            "rotation": 0,
+            "type": "DAC",
+            "x": 1970,
+            "y": 1520,
+            "zValue": 0
+        },
+        {
+            "category": "Measurement",
+            "id": "{9a8bd954-b71a-4b22-b67f-a44fccb05a22}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Analog Ammeter",
+            "x": 1850,
+            "y": 1640,
+            "zValue": 0
+        },
+        {
+            "category": "Advanced",
+            "id": "{238c080f-fcfd-4d5f-a898-abaf8474bac9}",
+            "name": "",
+            "properties": {
+                "conversionDelayTicks": 1
+            },
+            "rotation": 0,
+            "type": "ADC",
+            "x": 1970,
+            "y": 1440,
+            "zValue": 0
+        },
+        {
+            "category": "Measurement",
+            "id": "{6bd1a87d-c0c3-489e-98a8-178c4ace7c26}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Analog Voltmeter",
+            "x": 1850,
+            "y": 1590,
+            "zValue": 0
+        },
+        {
+            "category": "Interactive",
+            "id": "{f60a2b7f-7894-41ea-ac16-160510184eea}",
+            "name": "",
+            "properties": {
+                "state": false
+            },
+            "rotation": 0,
+            "type": "Switch",
+            "x": 1850,
+            "y": 1510,
+            "zValue": 0
+        },
+        {
+            "category": "Logic Gates",
+            "id": "{2303daa5-4b88-4c80-b839-56581f95ef10}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "D Flip-Flop",
+            "x": 1840,
+            "y": 1430,
+            "zValue": 0
+        },
+        {
+            "category": "Logic Gates",
+            "id": "{30cca582-94f5-4865-af86-4a5000842013}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Gate NOT",
+            "x": 1630,
+            "y": 1640,
+            "zValue": 0
+        },
+        {
+            "category": "Logic Gates",
+            "id": "{2cfc53c3-cea5-42ab-886b-9d9e182c90d6}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Gate OR",
+            "x": 1630,
+            "y": 1580,
+            "zValue": 0
+        },
+        {
+            "category": "Logic Gates",
+            "id": "{8d931e71-6123-4d77-bd45-149dfce32c47}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Gate AND",
+            "x": 1630,
+            "y": 1510,
+            "zValue": 0
+        },
+        {
+            "category": "Semiconductors",
+            "id": "{1d674ece-21e3-49b2-bdb5-8b25d322a63e}",
+            "name": "",
+            "properties": {
+                "model": "BC547"
+            },
+            "rotation": 0,
+            "type": "Transistor NPN",
+            "x": 1630,
+            "y": 1430,
+            "zValue": 0
+        },
+        {
+            "category": "Passive",
+            "id": "{dba6fcd7-2a0f-41ab-a3a5-beb126138f04}",
+            "name": "",
+            "properties": {
+                "inductance": 0.001
+            },
+            "rotation": 0,
+            "type": "Inductor",
+            "x": 1720,
+            "y": 1640,
+            "zValue": 0
+        },
+        {
+            "category": "Sources",
+            "id": "{fe1018bc-cc6b-4720-b900-2736a9a246f2}",
+            "name": "",
+            "properties": {
+                "internalResistance": 0,
+                "voltage": 9
+            },
+            "rotation": 0,
+            "type": "Battery",
+            "x": 1720,
+            "y": 1590,
+            "zValue": 0
+        },
+        {
+            "category": "Sources",
+            "id": "{fe11e659-48ab-4f8c-a182-a55cd4b8127e}",
+            "name": "",
+            "properties": {
+                "voltage": 5
+            },
+            "rotation": 0,
+            "type": "DC Source",
+            "x": 1720,
+            "y": 1530,
+            "zValue": 0
+        },
+        {
+            "category": "Semiconductors",
+            "id": "{4757dc27-de1a-45f6-83f9-e9e014969a02}",
+            "name": "",
+            "properties": {
+                "idealityFactor": 1.906,
+                "model": "1N4148",
+                "saturationCurrent": 4.352e-09
+            },
+            "rotation": 0,
+            "type": "Diode",
+            "x": 1720,
+            "y": 1470,
+            "zValue": 0
+        },
+        {
+            "category": "Passive",
+            "id": "{dc6925a4-b5da-4338-92b6-28f60d33e14b}",
+            "name": "",
+            "properties": {
+                "capacitance": 1e-05
+            },
+            "rotation": 0,
+            "type": "Capacitor",
+            "x": 1720,
+            "y": 1420,
+            "zValue": 0
+        },
+        {
+            "category": "Measurement",
+            "id": "{ee8f11f6-70c0-432b-b14f-6915093e6514}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Analog Voltmeter",
+            "x": 1370,
+            "y": 1340,
+            "zValue": 0
+        },
+        {
+            "category": "Sources",
+            "id": "{cc66a75e-c214-4415-a211-2d9445eb2302}",
+            "name": "",
+            "properties": {
+                "voltage": 5
+            },
+            "rotation": 90,
+            "type": "DC Source",
+            "x": 1180,
+            "y": 1480,
+            "zValue": 0
+        },
+        {
+            "category": "Sources",
+            "id": "{0fb19479-a3a0-42b2-aed0-8faf55f91891}",
+            "name": "",
+            "properties": {
+            },
+            "rotation": 0,
+            "type": "Ground",
+            "x": 1440,
+            "y": 1530,
+            "zValue": 0
+        },
+        {
+            "category": "Passive",
+            "id": "{006fc836-04e7-4920-9a11-a3c9560db920}",
+            "name": "",
+            "properties": {
+                "resistance": 1000
+            },
+            "rotation": 0,
+            "type": "Resistor",
+            "x": 1400,
+            "y": 1420,
+            "zValue": 0
+        },
+        {
+            "category": "Passive",
+            "id": "{33b8188b-ee81-4190-960f-1274ca1ae591}",
+            "name": "",
+            "properties": {
+                "resistance": 1000
+            },
+            "rotation": 0,
+            "type": "Resistor",
+            "x": 1280,
+            "y": 1420,
+            "zValue": 0
+        }
+    ],
+    "formatVersion": 1,
+    "wires": [
+        {
+            "fromComponentId": "{0fb19479-a3a0-42b2-aed0-8faf55f91891}",
+            "fromPinIndex": 0,
+            "toComponentId": "{cc66a75e-c214-4415-a211-2d9445eb2302}",
+            "toPinIndex": 1
+        },
+        {
+            "fromComponentId": "{33b8188b-ee81-4190-960f-1274ca1ae591}",
+            "fromPinIndex": 0,
+            "toComponentId": "{cc66a75e-c214-4415-a211-2d9445eb2302}",
+            "toPinIndex": 0
+        },
+        {
+            "fromComponentId": "{006fc836-04e7-4920-9a11-a3c9560db920}",
+            "fromPinIndex": 0,
+            "toComponentId": "{33b8188b-ee81-4190-960f-1274ca1ae591}",
+            "toPinIndex": 1
+        },
+        {
+            "fromComponentId": "{006fc836-04e7-4920-9a11-a3c9560db920}",
+            "fromPinIndex": 1,
+            "toComponentId": "{0fb19479-a3a0-42b2-aed0-8faf55f91891}",
+            "toPinIndex": 0
+        },
+        {
+            "fromComponentId": "{ee8f11f6-70c0-432b-b14f-6915093e6514}",
+            "fromPinIndex": 1,
+            "toComponentId": "{006fc836-04e7-4920-9a11-a3c9560db920}",
+            "toPinIndex": 1
+        },
+        {
+            "fromComponentId": "{ee8f11f6-70c0-432b-b14f-6915093e6514}",
+            "fromPinIndex": 0,
+            "toComponentId": "{33b8188b-ee81-4190-960f-1274ca1ae591}",
+            "toPinIndex": 1
+        }
+    ]
+}
