@@ -9,12 +9,10 @@ Switch::Switch() {
     setCategory("Interactive");
     setProperty("state", false, "State (ON=High)");
 
-    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out); // 0: دیجیتال (دست‌نخورده)
-    Pin* a = new Pin(this); a->setPos(-20, 20); addPin(a); // 1: ترمینال آنالوگ A (Bidirectional پیش‌فرض)
-    Pin* b = new Pin(this); b->setPos(25, 20);  addPin(b); // 2: ترمینال آنالوگ B
+    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out);
 }
 
-QRectF Switch::boundingRect() const { return QRectF(-25, -20, 55, 50); }
+QRectF Switch::boundingRect() const { return QRectF(-25, -20, 55, 40); }
 QPainterPath Switch::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 
 void Switch::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
@@ -33,12 +31,6 @@ void Switch::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget 
     else
         painter->drawLine(-8, 0, 10, -12);
 
-    // ترمینال‌های آنالوگ (پایه ۱/۲) - همان کلید، فقط دید مداری آنالوگ
-    painter->setPen(QPen(Qt::blue, 1, Qt::DashLine));
-    painter->drawLine(QPointF(-20, 8), QPointF(-20, 20));
-    painter->drawLine(QPointF(25, 8), QPointF(25, 20));
-    painter->drawText(QRectF(-30, 22, 60, 12), Qt::AlignCenter, QStringLiteral("A ⟷ B"));
-
     painter->setPen(QPen(Qt::black, 1));
     painter->drawText(-15, -22, name() + (on ? " [ON]" : " [OFF]"));
 }
@@ -56,12 +48,10 @@ PushButton::PushButton() {
     setCategory("Interactive");
     setProperty("pressed", false, "Pressed (=High)");
 
-    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out); // 0: دیجیتال (دست‌نخورده)
-    Pin* a = new Pin(this); a->setPos(-20, 20); addPin(a); // 1: ترمینال آنالوگ A
-    Pin* b = new Pin(this); b->setPos(25, 20);  addPin(b); // 2: ترمینال آنالوگ B
+    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out);
 }
 
-QRectF PushButton::boundingRect() const { return QRectF(-25, -20, 55, 50); }
+QRectF PushButton::boundingRect() const { return QRectF(-25, -20, 55, 40); }
 QPainterPath PushButton::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 
 void PushButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
@@ -74,12 +64,6 @@ void PushButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWid
     painter->setBrush(pressed ? QBrush(Qt::darkGreen) : QBrush(Qt::lightGray));
     painter->drawRect(QRectF(-8, -10, 16, 20));
     painter->setBrush(Qt::NoBrush);
-
-    // ترمینال‌های آنالوگ (پایه ۱/۲) - فقط تا وقتی pressed=true بسته‌اند
-    painter->setPen(QPen(Qt::blue, 1, Qt::DashLine));
-    painter->drawLine(QPointF(-20, 8), QPointF(-20, 20));
-    painter->drawLine(QPointF(25, 8), QPointF(25, 20));
-    painter->drawText(QRectF(-30, 22, 60, 12), Qt::AlignCenter, QStringLiteral("A ⟷ B"));
 
     painter->drawText(-15, -22, name() + (pressed ? " [PRESSED]" : ""));
 }

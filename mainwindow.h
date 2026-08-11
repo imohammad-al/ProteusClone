@@ -84,10 +84,6 @@ private slots:
     void on_actionStop_triggered();
     void on_actionStep_triggered();
 
-    void on_actionRotateCW_triggered();
-    void on_actionRotateCCW_triggered();
-    void on_actionMirror_triggered();
-
     void onSimulationStateChanged(SimulationState state);
 };
 #endif // MAINWINDOW_H

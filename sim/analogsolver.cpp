@@ -29,7 +29,12 @@ constexpr double kAnalogTimeStepSeconds = 0.001; // ۱ میلی‌ثانیه ش�
 constexpr double kThermalVoltage = 0.02585;   // ولت، kT/q تقریبی در دمای اتاق
 constexpr double kDiodeVoltageClamp = 1.5;    // ولت - سقف ایمن ارزیابی نمایی (جلوگیری از سرریز exp())
 constexpr double kDiodeVoltageFloor = -40.0;  // ولت - کف منطقی برای حالت بایاس معکوس
-constexpr int kMaxNewtonIterations = 100;
+// فاز ۱۶: با اضافه‌شدن limitNewtonVoltageStep (هر تکرار حداکثر ۱۰*n*VT≈۰.۲۵۸۵
+// ولت جابه‌جا می‌شود، برای پایداری عددی)، رسیدن از حدس اولیه صفر به یک پیوند
+// عمیقاً معکوس‌بایاس (مثلاً VBC نزدیک kDiodeVoltageFloor در ترانزیستوری با
+// منبع تغذیه بزرگ) می‌تونه به بیش از صد قدم نیاز داشته باشه؛ این عدد را با
+// حاشیه‌ی امن بالا بردم (هر تکرار فقط یک حل خطی کوچک است، هزینه‌اش ناچیزه).
+constexpr int kMaxNewtonIterations = 300;
 constexpr double kNewtonToleranceVolts = 1e-9;
 
 // یک عنصر مقاومتی بین دو گره (خطی، طبق قانون اهم)
@@ -78,6 +83,22 @@ struct DiodeElement {
     Diode *owner;
 };
 
+// ترانزیستور NPN (مدل کامل Ebers-Moll، حل غیرخطی با همان نیوتن-رافسون - فاز
+// ۱۶). مثل دیود، هیچ مجهول جدیدی به دستگاه اضافه نمی‌کند - فقط ترکیبی از دو
+// «دیود» پایه‌محور (B-E و B-C) به‌علاوه دو منبع جریان وابسته (alphaF*I_DE از
+// کلکتور به بیس، alphaR*I_DC از امیتر به بیس) که هر تکرار نیوتن دوباره
+// محاسبه می‌شوند - جزئیات مشتق کامل در کامنت بالای بخش استمپ‌گذاری پایین.
+struct TransistorElement {
+    Node *base;
+    Node *collector;
+    Node *emitter;
+    double saturationCurrent;
+    double idealityFactor;
+    double alphaForward;
+    double alphaReverse;
+    TransistorNPN *owner;
+};
+
 // جریان دیود I_d(Vd) و رسانایی دیفرانسیلی dI/dV را در ولتاژ داده‌شده حساب
 // می‌کند. Vd قبل از ارزیابی نمایی به kDiodeVoltageClamp کلمپ می‌شود تا exp()
 // هرگز سرریز نکند (دیودهای واقعی عملاً هیچ‌وقت این‌قدر بایاس مستقیم نمی‌بینند).
@@ -89,6 +110,27 @@ void diodeCurrentAndConductance(double vd, double is, double n,
     const double expTerm = std::exp(vdSafe / vtN);
     *outCurrent = is * (expTerm - 1.0);
     *outConductance = (is / vtN) * expTerm;
+}
+
+// محدودسازی گام نیوتن-رافسون (تکنیک استاندارد SPICE برای همگرایی پیوندهای
+// نمایی) - باگ واقعی که فقط با اولین کامپایل و اجرای واقعی این پروژه کشف شد
+// (فاز ۱۶): بدون این تابع، وقتی حدس اولیه صفر باشد و مقاومت سری بزرگ باشد
+// (مثلاً مقاومت بیس چند صدکیلواُمی)، همان تکرار اول ولتاژ را مستقیم به سقف
+// kDiodeVoltageClamp می‌پراند؛ در آنجا رسانایی دیفرانسیلی نمایی به مقادیر
+// نجومی (۱۰^۱۲ به بالا) می‌رسد که در کنار رسانایی معمولی مقاومت‌های مدار
+// (۱۰^-۶ تا ۱) یک ماتریس به‌شدت بدشرط می‌سازد و باعث نوسان دائمی/واگرایی
+// می‌شود (هیچ‌وقت هم‌گرا نمی‌شود) - این را با اجرای واقعی کد روی یک مدار
+// ترانزیستوری کشف کردم، نه با بازبینی دستی. راه‌حل: تغییر هر گام حداکثر به
+// اندازه چند برابر ولتاژ حرارتی محدود می‌شود (اینجا 10*n*VT، مطابق قاعده
+// رایج SPICE) تا رسانایی هرگز در یک جهش بین دو تکرار منفجر نشود - نیوتن هنوز
+// دقیقاً به همان جواب می‌رسد، فقط با گام‌های کوچک‌تر و پایدار.
+double limitNewtonVoltageStep(double proposedVoltage, double previousGuess, double idealityFactor)
+{
+    const double maxStep = 10.0 * idealityFactor * kThermalVoltage;
+    const double delta = proposedVoltage - previousGuess;
+    if (delta > maxStep) return previousGuess + maxStep;
+    if (delta < -maxStep) return previousGuess - maxStep;
+    return proposedVoltage;
 }
 
 // Union-Find ساده روی Node* برای شناسایی زیرمدارهای جدا از هم روی یک صحنه.
@@ -175,16 +217,7 @@ bool solveLinearSystem(QVector<QVector<double>> A, QVector<double> b, QVector<do
     return true;
 }
 
-// مقاومت معادل یک کلید/دکمه *بسته* (طبق بند ۶.۳ مستند: بسته=مقاومت صفر). صفر
-// واقعی رسانایی بی‌نهایت (تقسیم بر صفر) می‌داد؛ این مقدار خیلی کوچک عملاً از
-// دید هر مداری با مقادیر معقول (چند اهم به بالا) قابل تشخیص از صفر واقعی نیست
-// (کمتر از یک‌میلیاردم خطای نسبی روی هر مقاومت سری معمولی)، دقیقاً همان ترفند
-// رایج شبیه‌سازهای اسپایس برای مدل‌سازی یک کلید بسته بدون ماتریس بدشرط.
-constexpr double kClosedSwitchResistance = 1e-6; // اهم
-
 } // namespace
-
-
 
 bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
 {
@@ -203,6 +236,7 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
     QVector<CapacitorElement> capacitors;
     QVector<InductorElement> inductors;
     QVector<DiodeElement> diodes;
+    QVector<TransistorElement> transistors;
     QSet<Node *> groundNodes;
     UnionFind uf;
 
@@ -273,25 +307,30 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
                     uf.unite(nAnode, nCathode);
                 }
             }
-        } else if (type == QLatin1String("Switch") || type == QLatin1String("Push Button")) {
-            // پایه‌های ۱/۲ ترمینال‌های آنالوگ کلید هستند (پایه ۰ همان خروجی دیجیتال
-            // قبلی و دست‌نخورده است - به interactivecomponents.h مراجعه کن). طبق
-            // بند ۶.۳ مستند: بسته=مقاومت صفر (اینجا: خیلی کوچک)، باز=اصلاً استمپ نشود.
-            const bool closed = (type == QLatin1String("Switch"))
-                                     ? c->property("state").toBool()
-                                     : c->property("pressed").toBool();
-            if (closed) {
-                Pin *p1 = c->pin(1);
-                Pin *p2 = c->pin(2);
-                Node *n1 = p1 ? p1->node() : nullptr;
-                Node *n2 = p2 ? p2->node() : nullptr;
-                if (n1 && n2) {
-                    resistors.append(ResistorElement{n1, n2, kClosedSwitchResistance});
-                    uf.unite(n1, n2);
+        } else if (type == QLatin1String("Transistor NPN")) {
+            auto *bjt = dynamic_cast<TransistorNPN *>(c);
+            Pin *pBase = c->pin(0);
+            Pin *pCollector = c->pin(1);
+            Pin *pEmitter = c->pin(2);
+            Node *nBase = pBase ? pBase->node() : nullptr;
+            Node *nCollector = pCollector ? pCollector->node() : nullptr;
+            Node *nEmitter = pEmitter ? pEmitter->node() : nullptr;
+            if (bjt && nBase && nCollector && nEmitter) {
+                const double is = c->property("saturationCurrent").toDouble();
+                const double n = c->property("idealityFactor").toDouble();
+                const double betaF = c->property("forwardBeta").toDouble();
+                const double betaR = c->property("reverseBeta").toDouble();
+                if (is > 0.0 && n > 0.0 && betaF > 0.0 && betaR > 0.0) {
+                    const double alphaF = betaF / (betaF + 1.0);
+                    const double alphaR = betaR / (betaR + 1.0);
+                    transistors.append(TransistorElement{nBase, nCollector, nEmitter,
+                                                           is, n, alphaF, alphaR, bjt});
+                    uf.unite(nBase, nCollector);
+                    uf.unite(nBase, nEmitter);
                 }
+                // پارامتر نامعتبر (<=0) مثل مقاومت نامعتبر، بی‌سروصدا نادیده گرفته
+                // می‌شود - باید هنگام ویرایش ویژگی جلوگیری بشه، نه اینجا.
             }
-            // باز: عمداً هیچ استمپی انجام نمی‌شود - از دید AnalogSolver انگار این
-            // شاخه اصلاً وجود ندارد (مدار باز واقعی، نه فقط مقاومت خیلی بزرگ).
         } else if (type == QLatin1String("DC Source") || type == QLatin1String("Battery")) {
             // Battery در این فاز مثل یک منبع ولتاژ ایده‌آل حل می‌شود؛ ویژگی
             // "internalResistance" هنوز اینجا اعمال نمی‌شود (به sources.h مراجعه کن).
@@ -333,7 +372,7 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
     }
 
     if (resistors.isEmpty() && sources.isEmpty() && capacitors.isEmpty()
-        && inductors.isEmpty() && diodes.isEmpty())
+        && inductors.isEmpty() && diodes.isEmpty() && transistors.isEmpty())
         return true; // مداری کاملاً دیجیتالی - چیزی آنالوگ برای حل کردن نیست
 
     for (Node *g : groundNodes)
@@ -346,6 +385,9 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
     for (const CapacitorElement &cp : capacitors) { touched.insert(cp.a); touched.insert(cp.b); }
     for (const InductorElement &ind : inductors)  { touched.insert(ind.a); touched.insert(ind.b); }
     for (const DiodeElement &d : diodes)          { touched.insert(d.anode); touched.insert(d.cathode); }
+    for (const TransistorElement &t : transistors) {
+        touched.insert(t.base); touched.insert(t.collector); touched.insert(t.emitter);
+    }
     for (Node *g : groundNodes) touched.insert(g);
 
     QHash<Node *, QList<Node *>> groups;
@@ -402,10 +444,15 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
             if (uf.find(d.anode) == groupRoot)
                 localDiodes.append(d);
 
+        QVector<TransistorElement> localTransistors;
+        for (const TransistorElement &t : transistors)
+            if (uf.find(t.base) == groupRoot)
+                localTransistors.append(t);
+
         const int sourceCount = localSources.size();
         const int inductorCount = localInductors.size();
         // ترتیب مجهول‌ها: [ولتاژهای گره غیرزمین] [جریان‌های منبع/آمپرمتر/DAC] [جریان‌های سلف]
-        // (دیودها مثل خازن مجهول جدید اضافه نمی‌کنن - فقط رسانایی+منبع جریان معادل)
+        // (دیودها و ترانزیستورها مثل خازن مجهول جدید اضافه نمی‌کنن - فقط رسانایی+منبع جریان معادل)
         const int n = nodeCount + sourceCount + inductorCount;
         if (n == 0)
             continue; // فقط یک Ground تنها، بدون هیچ عنصر دیگری - چیزی برای حل کردن نیست
@@ -413,7 +460,9 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
         // --- یک‌بار ماتریس را با حدس‌های فعلی ولتاژ دیودها می‌سازد و حل می‌کند.
         // برای زیرمدار کاملاً خطی (بدون دیود) فقط یک‌بار صدا زده می‌شود؛ برای
         // زیرمدار غیرخطی، در حلقه نیوتن-رافسون پایین‌تر بارها صدا زده می‌شود. ---
-        auto buildAndSolveOnce = [&](const QVector<double> &diodeGuesses) -> QVector<double> {
+        auto buildAndSolveOnce = [&](const QVector<double> &diodeGuesses,
+                                      const QVector<double> &transistorVBEGuesses,
+                                      const QVector<double> &transistorVBCGuesses) -> QVector<double> {
             QVector<QVector<double>> A(n, QVector<double>(n, 0.0));
             QVector<double> b(n, 0.0);
 
@@ -498,6 +547,82 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
                 if (ik != nodeIndex.constEnd()) b[ik.value()] -= iEq;
             }
 
+            // ترانزیستور NPN (مدل Ebers-Moll، نیوتن-رافسون - فاز ۱۶). با دو
+            // «دیود» پایه‌محور (D_E: بیس->امیتر با جریان I_DE، D_C: بیس->کلکتور
+            // با جریان I_DC، هر دو دقیقاً با همان استمپ رسانایی+iEq دیود بالا)
+            // به‌علاوه دو منبع جریان وابسته مدل می‌شود: S_F به مقدار alphaF*I_DE
+            // از کلکتور به بیس، و S_R به مقدار alphaR*I_DC از امیتر به بیس. این
+            // مدل با معادلات استاندارد Ebers-Moll (I_B=(1-αF)I_DE+(1-αR)I_DC,
+            // I_C=αF*I_DE-I_DC, I_E=-I_DE+αR*I_DC) و پایستگی جریان در هر سه پایه
+            // دستی تأیید شده (جمع هر سطر/ستون ژاکوبین صفر می‌شود - به HANDOFF
+            // مراجعه کن). چون S_F/S_R به‌صورت خطی به iEq همان دیودهای D_E/D_C
+            // وابسته‌اند (iEq_SF=alphaF*iEq_DE، iEq_SR=alphaR*iEq_DC)، نیازی به
+            // محاسبه جداگانه نیست.
+            for (int i = 0; i < localTransistors.size(); ++i) {
+                const TransistorElement &t = localTransistors[i];
+                double currentDE = 0.0, conductanceDE = 0.0;
+                double currentDC = 0.0, conductanceDC = 0.0;
+                diodeCurrentAndConductance(transistorVBEGuesses[i], t.saturationCurrent,
+                                            t.idealityFactor, &currentDE, &conductanceDE);
+                diodeCurrentAndConductance(transistorVBCGuesses[i], t.saturationCurrent,
+                                            t.idealityFactor, &currentDC, &conductanceDC);
+
+                const double iEqDE = conductanceDE * transistorVBEGuesses[i] - currentDE;
+                const double iEqDC = conductanceDC * transistorVBCGuesses[i] - currentDC;
+
+                // D_E: بیس(آند)->امیتر(کاتد)
+                stampSelf(t.base, conductanceDE);
+                stampSelf(t.emitter, conductanceDE);
+                stampMutual(t.base, t.emitter, conductanceDE);
+                {
+                    auto ib = nodeIndex.constFind(t.base);
+                    auto ie = nodeIndex.constFind(t.emitter);
+                    if (ib != nodeIndex.constEnd()) b[ib.value()] += iEqDE;
+                    if (ie != nodeIndex.constEnd()) b[ie.value()] -= iEqDE;
+                }
+                // D_C: بیس(آند)->کلکتور(کاتد)
+                stampSelf(t.base, conductanceDC);
+                stampSelf(t.collector, conductanceDC);
+                stampMutual(t.base, t.collector, conductanceDC);
+                {
+                    auto ib = nodeIndex.constFind(t.base);
+                    auto ic = nodeIndex.constFind(t.collector);
+                    if (ib != nodeIndex.constEnd()) b[ib.value()] += iEqDC;
+                    if (ic != nodeIndex.constEnd()) b[ic.value()] -= iEqDC;
+                }
+
+                // S_F: alphaF*I_DE از کلکتور به بیس (کنترل‌شده با V_BE، یعنی
+                // وابسته به گره‌های بیس/امیتر نه خودِ کلکتور).
+                const double gTF = t.alphaForward * conductanceDE;
+                const double iEqSF = t.alphaForward * iEqDE;
+                {
+                    auto ic = nodeIndex.constFind(t.collector);
+                    auto ib = nodeIndex.constFind(t.base);
+                    auto ie = nodeIndex.constFind(t.emitter);
+                    if (ic != nodeIndex.constEnd() && ib != nodeIndex.constEnd()) A[ic.value()][ib.value()] += gTF;
+                    if (ic != nodeIndex.constEnd() && ie != nodeIndex.constEnd()) A[ic.value()][ie.value()] -= gTF;
+                    if (ib != nodeIndex.constEnd()) A[ib.value()][ib.value()] -= gTF;
+                    if (ib != nodeIndex.constEnd() && ie != nodeIndex.constEnd()) A[ib.value()][ie.value()] += gTF;
+                    if (ic != nodeIndex.constEnd()) b[ic.value()] += iEqSF;
+                    if (ib != nodeIndex.constEnd()) b[ib.value()] -= iEqSF;
+                }
+
+                // S_R: alphaR*I_DC از امیتر به بیس (کنترل‌شده با V_BC).
+                const double gTR = t.alphaReverse * conductanceDC;
+                const double iEqSR = t.alphaReverse * iEqDC;
+                {
+                    auto ie = nodeIndex.constFind(t.emitter);
+                    auto ib = nodeIndex.constFind(t.base);
+                    auto icc = nodeIndex.constFind(t.collector);
+                    if (ie != nodeIndex.constEnd() && ib != nodeIndex.constEnd()) A[ie.value()][ib.value()] += gTR;
+                    if (ie != nodeIndex.constEnd() && icc != nodeIndex.constEnd()) A[ie.value()][icc.value()] -= gTR;
+                    if (ib != nodeIndex.constEnd()) A[ib.value()][ib.value()] -= gTR;
+                    if (ib != nodeIndex.constEnd() && icc != nodeIndex.constEnd()) A[ib.value()][icc.value()] += gTR;
+                    if (ie != nodeIndex.constEnd()) b[ie.value()] += iEqSR;
+                    if (ib != nodeIndex.constEnd()) b[ib.value()] -= iEqSR;
+                }
+            }
+
             QVector<double> x;
             if (!solveLinearSystem(A, b, &x))
                 return QVector<double>();
@@ -506,25 +631,36 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
 
         QVector<double> x;
 
-        if (localDiodes.isEmpty()) {
+        if (localDiodes.isEmpty() && localTransistors.isEmpty()) {
             // مسیر کاملاً خطی - همان مسیر تست‌شده فازهای ۱۱ تا ۱۳، بدون هیچ تغییری.
-            x = buildAndSolveOnce(QVector<double>());
+            x = buildAndSolveOnce(QVector<double>(), QVector<double>(), QVector<double>());
             if (x.isEmpty()) {
                 failureReasons << QObject::tr("یک زیرمدار به دلیل معادلات ناسازگار/تکین قابل حل نبود.");
                 allGroupsOk = false;
                 continue;
             }
         } else {
-            // مسیر غیرخطی: تکرار نیوتن-رافسون تا همگرایی ولتاژ دیودها.
+            // مسیر غیرخطی: تکرار نیوتن-رافسون تا همگرایی ولتاژ دیودها *و*
+            // پیوندهای B-E/B-C همه‌ی ترانزیستورها - در یک حلقه‌ی مشترک، چون
+            // ممکنه دیود و ترانزیستور در یک زیرمدار به هم وابسته باشن.
             QVector<double> guesses(localDiodes.size());
             for (int i = 0; i < localDiodes.size(); ++i)
                 guesses[i] = qBound(kDiodeVoltageFloor, localDiodes[i].owner->previousVoltageGuess(),
                                      kDiodeVoltageClamp);
 
+            QVector<double> vbeGuesses(localTransistors.size());
+            QVector<double> vbcGuesses(localTransistors.size());
+            for (int i = 0; i < localTransistors.size(); ++i) {
+                vbeGuesses[i] = qBound(kDiodeVoltageFloor, localTransistors[i].owner->previousVBEGuess(),
+                                        kDiodeVoltageClamp);
+                vbcGuesses[i] = qBound(kDiodeVoltageFloor, localTransistors[i].owner->previousVBCGuess(),
+                                        kDiodeVoltageClamp);
+            }
+
             bool converged = false;
             bool linearFailure = false;
             for (int iter = 0; iter < kMaxNewtonIterations; ++iter) {
-                x = buildAndSolveOnce(guesses);
+                x = buildAndSolveOnce(guesses, vbeGuesses, vbcGuesses);
                 if (x.isEmpty()) { linearFailure = true; break; }
 
                 double maxDelta = 0.0;
@@ -533,22 +669,47 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
                     const DiodeElement &d = localDiodes[i];
                     const double va = localGround.contains(d.anode) ? 0.0 : x[nodeIndex.value(d.anode)];
                     const double vk = localGround.contains(d.cathode) ? 0.0 : x[nodeIndex.value(d.cathode)];
-                    double newVd = qBound(kDiodeVoltageFloor, va - vk, kDiodeVoltageClamp);
+                    const double stepped = limitNewtonVoltageStep(va - vk, guesses[i], d.idealityFactor);
+                    double newVd = qBound(kDiodeVoltageFloor, stepped, kDiodeVoltageClamp);
                     maxDelta = qMax(maxDelta, std::fabs(newVd - guesses[i]));
                     newGuesses[i] = newVd;
                 }
                 guesses = newGuesses;
+
+                QVector<double> newVbeGuesses(localTransistors.size());
+                QVector<double> newVbcGuesses(localTransistors.size());
+                for (int i = 0; i < localTransistors.size(); ++i) {
+                    const TransistorElement &t = localTransistors[i];
+                    const double vb = localGround.contains(t.base) ? 0.0 : x[nodeIndex.value(t.base)];
+                    const double vc = localGround.contains(t.collector) ? 0.0 : x[nodeIndex.value(t.collector)];
+                    const double ve = localGround.contains(t.emitter) ? 0.0 : x[nodeIndex.value(t.emitter)];
+                    const double steppedVbe = limitNewtonVoltageStep(vb - ve, vbeGuesses[i], t.idealityFactor);
+                    const double steppedVbc = limitNewtonVoltageStep(vb - vc, vbcGuesses[i], t.idealityFactor);
+                    const double vbe = qBound(kDiodeVoltageFloor, steppedVbe, kDiodeVoltageClamp);
+                    const double vbc = qBound(kDiodeVoltageFloor, steppedVbc, kDiodeVoltageClamp);
+                    maxDelta = qMax(maxDelta, std::fabs(vbe - vbeGuesses[i]));
+                    maxDelta = qMax(maxDelta, std::fabs(vbc - vbcGuesses[i]));
+                    newVbeGuesses[i] = vbe;
+                    newVbcGuesses[i] = vbc;
+                }
+                vbeGuesses = newVbeGuesses;
+                vbcGuesses = newVbcGuesses;
+
                 if (maxDelta < kNewtonToleranceVolts) { converged = true; break; }
             }
 
             if (linearFailure || !converged) {
-                failureReasons << QObject::tr("یک زیرمدار غیرخطی (دیود) همگرا نشد یا قابل حل نبود.");
+                failureReasons << QObject::tr("یک زیرمدار غیرخطی (دیود/ترانزیستور) همگرا نشد یا قابل حل نبود.");
                 allGroupsOk = false;
                 continue;
             }
 
             for (int i = 0; i < localDiodes.size(); ++i)
                 localDiodes[i].owner->setPreviousVoltageGuess(guesses[i]);
+            for (int i = 0; i < localTransistors.size(); ++i) {
+                localTransistors[i].owner->setPreviousVBEGuess(vbeGuesses[i]);
+                localTransistors[i].owner->setPreviousVBCGuess(vbcGuesses[i]);
+            }
         }
 
         for (Node *n2 : groupNodes) {

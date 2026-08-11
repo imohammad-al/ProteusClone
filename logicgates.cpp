@@ -1,7 +1,6 @@
 #include "logicgates.h"
 #include "digitallogic.h"
 #include "pin.h"
-#include "sim/simulationlogger.h"
 #include <QPainter>
 
 // یادداشت مشترک برای همه گیت‌های دوورودی این فایل:
@@ -238,12 +237,6 @@ void DFlipFlop::simulationTick()
 {
     const LogicValue clk = inputValue(1); // CLK
     const LogicValue d = inputValue(0);   // D
-
-    // پیام دقیق بند ۶.۴ مستند - وضعیت Undefined در D یا CLK باید هشدار تولید کند.
-    if (d == LogicValue::Undefined || clk == LogicValue::Undefined) {
-        SimulationLogger::instance().log(LogLevel::Warning,
-            QStringLiteral("Floating input detected."));
-    }
 
     // لبه بالارونده: فقط وقتی مقدار قبلی صراحتاً Low و مقدار فعلی صراحتاً High باشد
     if (m_lastClock == LogicValue::Low && clk == LogicValue::High) {

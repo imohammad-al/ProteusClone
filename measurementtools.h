@@ -1,7 +1,10 @@
 #ifndef MEASUREMENTTOOLS_H
 #define MEASUREMENTTOOLS_H
-#include "digitallogic.h"
+
 #include "component.h"
+#include "pin.h" // برای LogicValue (فاز ۱۶: باگ واقعی که با اولین کامپایل واقعی این
+                  // پروژه کشف شد - قبلاً فقط با شانسِ ترتیب include در واحدهای
+                  // ترجمه‌ی دیگر کامپایل می‌شد)
 #include <QVector>
 
 // --- پراب منطقی ---

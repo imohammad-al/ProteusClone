@@ -42,6 +42,15 @@ TransistorNPN::TransistorNPN() {
     setComponentType("Transistor NPN");
     setCategory("Semiconductors");
     setProperty("model", "BC547"); // به ساختار پراپرتی کیوت منتقل شد
+    // پارامترهای عددی مدل Ebers-Moll برای تحلیل غیرخطی (فاز ۱۶) - مقادیر
+    // پیش‌فرض تقریباً در محدوده‌ی رایج برای یک ترانزیستور سیگنال‌کوچک مثل
+    // BC547 (idealityFactor=1 برای هر دو پیوند - ساده‌سازی عمدی نسبت به دیود
+    // که n=1.906 دارد؛ reverseBeta پایین طبق رفتار واقعی ترانزیستورها که در
+    // جهت معکوس بهره جریان خیلی کمتری دارند).
+    setProperty("saturationCurrent", 1.0e-14, "Saturation Current (Is)", "A");
+    setProperty("idealityFactor", 1.0, "Ideality Factor (n)", "");
+    setProperty("forwardBeta", 200.0, "Forward Current Gain (βF)", "");
+    setProperty("reverseBeta", 4.0, "Reverse Current Gain (βR)", "");
 
     Pin* base = new Pin(this);      base->setPos(-25, 0);   addPin(base);      // پایه بیس
     Pin* collector = new Pin(this); collector->setPos(15, -30); addPin(collector); // پایه کلکتور (بالا)

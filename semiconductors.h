@@ -34,10 +34,19 @@ private:
 };
 
 // --- ترانزیستور NPN ---
-// محدودیت شناخته‌شده: هنوز فقط گرافیکی است، در AnalogSolver شرکت نمی‌کند. مدل
-// Ebers-Moll واقعی (دو پیوند PN جفت‌شده + بهره جریان beta) به‌مراتب پیچیده‌تر
-// از دیود تکی است (چند مجهول ولتاژ به‌جای یکی، دو معادله غیرخطی جفت‌شده) و
-// عمداً به فاز جداگانه‌ای موکول شده - به HANDOFF.md مراجعه کن.
+// از فاز ۱۶ به بعد، این قطعه در sim/analogsolver.cpp به‌صورت غیرخطی واقعی حل
+// می‌شود: مدل کامل Ebers-Moll (دو پیوند PN جفت‌شده B-E و B-C + دو منبع جریان
+// وابسته alphaF/alphaR) با همان زیرساخت نیوتن-رافسون فاز ۱۴ (دیود). پایه‌ها:
+// pin(0)=Base، pin(1)=Collector، pin(2)=Emitter.
+//
+// ویژگی‌های عددی («saturationCurrent»، «idealityFactor» - مشابه دیود، این‌بار
+// برای هر دو پیوند مشترک - ساده‌سازی عمدی) + «forwardBeta»/«reverseBeta» که
+// AnalogSolver خودش به alphaF=βF/(βF+1) و alphaR=βR/(βR+1) تبدیل می‌کند.
+//
+// m_previousVBEGuess/m_previousVBCGuess حالت گذرا برای نیوتن-رافسون‌اند (نقطه
+// شروع حدس هر تیک = آخرین جواب همگراشده‌ی تیک قبل) - دقیقاً همان الگوی
+// Diode::m_previousVoltageGuess، فقط این‌بار دو مجهول به‌جای یکی چون ترانزیستور
+// دو پیوند دارد. فقط توسط AnalogSolver خوانده/نوشته می‌شود.
 class TransistorNPN : public Component {
 public:
     TransistorNPN(); // بدنه درون‌خطی حذف شد
@@ -49,6 +58,16 @@ public:
 
     bool isValid() override { return true; }
     SimulationElement simulationModel() override { return SimulationElement(); }
+
+    double previousVBEGuess() const { return m_previousVBEGuess; }
+    double previousVBCGuess() const { return m_previousVBCGuess; }
+    void setPreviousVBEGuess(double volts) { m_previousVBEGuess = volts; }
+    void setPreviousVBCGuess(double volts) { m_previousVBCGuess = volts; }
+    void resetTransientState() { m_previousVBEGuess = 0.0; m_previousVBCGuess = 0.0; }
+
+private:
+    double m_previousVBEGuess = 0.0;
+    double m_previousVBCGuess = 0.0;
 };
 
 #endif // SEMICONDUCTORS_H

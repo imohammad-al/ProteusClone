@@ -4,7 +4,6 @@
 #include "circuitscene.h"
 #include "circuitgraphicsview.h"
 #include "componentfactory.h"
-#include "iconfactory.h"
 #include "io/projectserializer.h"
 #include "sim/designrulechecker.h"
 #include "sim/simulationlogger.h"
@@ -19,7 +18,6 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QLabel>
-#include <QToolButton>
 #include "commands/deletecomponentcommand.h"
 #include "commands/deletewirecommand.h"
 #include "commands/rotatecommand.h"
@@ -70,63 +68,14 @@ MainWindow::MainWindow(QWidget *parent)
     onSimulationStateChanged(SimulationState::Stopped);
 
     ui->actionResistor->setText("Components");
-    ui->actionResistor->setToolTip(tr("Place Component (last used: %1)").arg(m_lastSelectedComponent));
+    ui->mainToolBar->addAction(ui->actionSelect);
+    ui->mainToolBar->addAction(ui->actionWire);
+    ui->mainToolBar->addAction(ui->actionResistor);
+    ui->mainToolBar->addAction(
+        undoStack->createUndoAction(this,"Undo"));
 
-    //-----------------------------------------
-    // آیکون‌ها (بخش «تکمیل ظاهری» - شبیه‌سازی نوار ابزارهای واقعی پروتئوس،
-    // به IconFactory واگذار شده تا هیچ فایل تصویری خارجی لازم نباشد)
-    //-----------------------------------------
-
-    ui->actionNew->setIcon(IconFactory::newProjectIcon());
-    ui->actionOpen->setIcon(IconFactory::openProjectIcon());
-    ui->actionSave->setIcon(IconFactory::saveProjectIcon());
-    ui->actionSaveAs->setIcon(IconFactory::saveAsIcon());
-    ui->actionExportImage->setIcon(IconFactory::exportImageIcon());
-
-    ui->actionSelect->setIcon(IconFactory::selectIcon());
-    ui->actionWire->setIcon(IconFactory::wireIcon());
-    ui->actionResistor->setIcon(IconFactory::placeComponentIcon());
-    ui->actionRotateCW->setIcon(IconFactory::rotateCwIcon());
-    ui->actionRotateCCW->setIcon(IconFactory::rotateCcwIcon());
-    ui->actionMirror->setIcon(IconFactory::mirrorIcon());
-
-    ui->actionCheckDesign->setIcon(IconFactory::checkDesignIcon());
-    ui->actionRun->setIcon(IconFactory::runIcon());
-    ui->actionPause->setIcon(IconFactory::pauseIcon());
-    ui->actionStop->setIcon(IconFactory::stopIcon());
-    ui->actionStep->setIcon(IconFactory::stepIcon());
-
-    ui->actionZoomIn->setIcon(IconFactory::zoomInIcon());
-    ui->actionZoomOut->setIcon(IconFactory::zoomOutIcon());
-    ui->actionZoomReset->setIcon(IconFactory::zoomResetIcon());
-
-    // Undo/Redo با متن پویا (شرح آخرین عمل) از خودِ QUndoStack ساخته می‌شوند،
-    // پس نمی‌توانند از قبل توی مستند Designer (.ui) تعریف شده باشند؛ اینجا هم
-    // آیکون می‌گیرند و هم کنار Save در نوار بالا قرار می‌گیرند - دقیقاً مطابق
-    // چیدمان نوار ابزار اصلی پروتئوس واقعی (New/Open/Save | Undo/Redo | Zoom).
-    QAction *undoAction = undoStack->createUndoAction(this, tr("Undo"));
-    QAction *redoAction = undoStack->createRedoAction(this, tr("Redo"));
-    undoAction->setIcon(IconFactory::undoIcon());
-    redoAction->setIcon(IconFactory::redoIcon());
-    ui->mainToolBar->insertAction(ui->actionZoomIn, undoAction);
-    ui->mainToolBar->insertAction(ui->actionZoomIn, redoAction);
-    ui->mainToolBar->insertSeparator(ui->actionZoomIn);
-
-    //-----------------------------------------
-    // دکمه‌های Run/Pause/Stop/Step روی نوار وضعیت پایین صفحه (نه نوار بالا) -
-    // دقیقاً همان جایی که نرم‌افزار واقعی پروتئوس این دکمه‌ها را نشان می‌دهد.
-    //-----------------------------------------
-    auto addStatusBarToolButton = [this](QAction *action) {
-        auto *button = new QToolButton(this);
-        button->setDefaultAction(action);
-        button->setAutoRaise(true);
-        ui->statusbar->addWidget(button);
-        return button;
-    };
-    addStatusBarToolButton(ui->actionRun);
-    addStatusBarToolButton(ui->actionPause);
-    addStatusBarToolButton(ui->actionStop);
-    addStatusBarToolButton(ui->actionStep);
+    ui->mainToolBar->addAction(
+        undoStack->createRedoAction(this,"Redo"));
 
     ui->graphicsView->setScene(scene);
 
@@ -416,35 +365,6 @@ void MainWindow::on_actionResistor_triggered()
 
     qDebug() << "قطعه فعال شد:" << m_lastSelectedComponent;
 }
-//////////////////////////////////////////////////////////
-// نوار ابزار حالت‌ها: چرخش و قرینه‌سازی (بخش ۴.۴/۴.۵ مستند) - همان منطق
-// keyPressEvent (کلیدهای R/M)، فقط این‌بار از روی دکمه‌های آیکونی نوار کناری
-//////////////////////////////////////////////////////////
-
-void MainWindow::on_actionRotateCW_triggered()
-{
-    for (QGraphicsItem *item : scene->selectedItems())
-        if (undoStack)
-            undoStack->push(new RotateCommand(scene, item, 90));
-}
-
-void MainWindow::on_actionRotateCCW_triggered()
-{
-    for (QGraphicsItem *item : scene->selectedItems())
-        if (undoStack)
-            undoStack->push(new RotateCommand(scene, item, -90));
-}
-
-void MainWindow::on_actionMirror_triggered()
-{
-    for (QGraphicsItem *item : scene->selectedItems()) {
-        if (dynamic_cast<Wire*>(item))
-            continue; // آینه‌کردن فقط برای قطعات معنا دارد، نه سیم‌ها
-        if (undoStack)
-            undoStack->push(new MirrorCommand(scene, item));
-    }
-}
-
 void MainWindow::openComponentSelectionDialog()
 {
     // ۱. ساختن یک لیست متنی خالی
@@ -472,7 +392,6 @@ void MainWindow::openComponentSelectionDialog()
 
         // ۶. تغییر نام پویا و زنده دکمه تولبار به نام قطعه انتخاب شده (جدید)
         ui->actionResistor->setText(selectedItem);
-        ui->actionResistor->setToolTip(tr("Place Component (last used: %1)").arg(selectedItem));
     }
 
 }

@@ -4,18 +4,11 @@
 #include "digitalcomponent.h"
 #include "component.h"
 
-// --- سوییچ دیجیتال + آنالوگ ---
-// پایه ۰ دقیقاً همان رفتار قبلی را دارد (خروجی دیجیتال High/Low بر پایه ویژگی
-// "state") - برای سازگاری با مدارها/پروژه‌های ذخیره‌شده‌ی قبلی، این پایه و
-// رفتارش دست‌نخورده می‌ماند و outputPinIndex() صراحتاً ۰ برمی‌گرداند (نه پیش‌فرض
-// pinCount()-1، چون با اضافه شدن پایه‌های جدید آن پیش‌فرض دیگر درست نیست).
-//
-// پایه‌های ۱ و ۲ (فاز جدید): دو ترمینال «کلید فیزیکی واقعی» طبق بند ۶.۳ مستند -
-// "باز=مقاومت بی‌نهایت، بسته=مقاومت صفر". این دو پایه در AnalogSolver مثل یک
-// Resistor با مقاومت خیلی کوچک (بسته) یا کاملاً غایب (باز) دیده می‌شوند؛ خودشان
-// Bidirectional هستند و در سیستم دیجیتال شرکت نمی‌کنند (دقیقاً مثل Resistor).
-// همین یک ویژگی "state" هم پایه ۰ (دیجیتال) و هم پایه‌های ۱/۲ (آنالوگ) را کنترل
-// می‌کند - از دید کاربر یک سوییچ، از دید موتور دو نمایندگی مستقل و بی‌تداخل.
+// --- سوییچ دیجیتال ---
+// یک منبع منطقی ساده با یک پایه خروجی. وضعیت آن (HIGH/LOW) از طریق ویژگی
+// قابل‌ویرایش "state" در دیالوگ ویژگی‌ها (دابل‌کلیک روی قطعه) تغییر می‌کند.
+// نکته: کلیک مستقیم روی بوم برای تغییر وضعیت حین اجرای شبیه‌سازی هنوز پیاده نشده
+// و کاندید خوبی برای تکمیل در فاز بعدی رابط‌کاربری/تعامل است.
 class Switch : public DigitalComponent {
 public:
     Switch();
@@ -29,12 +22,11 @@ public:
     SimulationElement simulationModel() override { return SimulationElement(); }
 
     LogicValue computeOutput() const override;
-    int outputPinIndex() const override { return 0; }
 };
 
-// --- شاسی فشاری (Push Button) + آنالوگ ---
-// مشابه Switch: پایه ۰ دیجیتال (رفتار قبلی دست‌نخورده، ویژگی "pressed")، پایه‌های
-// ۱/۲ ترمینال‌های آنالوگ (بسته فقط تا وقتی pressed=true، طبق ماهیت لحظه‌ای این قطعه).
+// --- شاسی فشاری (Push Button) ---
+// مشابه Switch اما از نظر مفهومی لحظه‌ای (Momentary) است؛ در این نسخه وضعیت آن هم
+// از طریق ویژگی "pressed" کنترل می‌شود (تعامل مستقیم با کلیک ماوس، فاز بعدی).
 class PushButton : public DigitalComponent {
 public:
     PushButton();
@@ -48,7 +40,6 @@ public:
     SimulationElement simulationModel() override { return SimulationElement(); }
 
     LogicValue computeOutput() const override;
-    int outputPinIndex() const override { return 0; }
 };
 
 // --- LED ---
