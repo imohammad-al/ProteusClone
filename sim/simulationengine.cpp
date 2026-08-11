@@ -107,8 +107,6 @@ void SimulationEngine::resetAllComponents()
             ind->resetTransientState();
         if (Diode *diode = dynamic_cast<Diode*>(c))
             diode->resetTransientState();
-        if (TransistorNPN *bjt = dynamic_cast<TransistorNPN*>(c))
-            bjt->resetTransientState();
     }
 
     // ولتاژهای آنالوگ تیک قبلی هم پاک شوند تا AnalogVoltmeter/AnalogAmmeter

@@ -37,6 +37,13 @@ protected:
     // خواندن مقدار گره متصل به پایه ورودی شماره index (اگر پایه یا گره‌ای نباشد: Undefined)
     LogicValue inputValue(int index) const;
 
+    // آیا حداقل یکی از پایه‌های *غیر از خروجی* این قطعه Undefined/Floating است؟
+    // برای قطعات ترکیبی ساده (AND/OR/NOT/NAND/XOR/DFlipFlop) استفاده می‌شود تا پیام
+    // دقیق «Floating input detected.» طبق بند ۶.۴ مستند صادر شود. قطعاتی که کاملاً
+    // simulationTick خودشان را بازنویسی می‌کنند (MCU/LCD/Keypad/ADC/DAC) از این
+    // تابع استفاده نمی‌کنند و منطق هشدار خودشان را دارند (در صورت نیاز).
+    bool hasFloatingInput() const;
+
 private:
     int m_delaySteps = 1;
     int m_pendingCountdown = -1;
