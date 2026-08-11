@@ -242,6 +242,27 @@ QIcon IconFactory::mirrorIcon()
 
 // ============================= Tools / Simulation =============================
 
+QIcon IconFactory::pickPartsIcon()
+{
+    QPixmap pm = blankCanvas();
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    p.setPen(QPen(kInk, 1.6));
+    p.setBrush(QColor(250, 235, 205));
+    p.drawRect(QRectF(2, 9, 11, 7));
+    p.drawLine(QPointF(4, 9), QPointF(4, 6));
+    p.drawLine(QPointF(9, 9), QPointF(9, 6));
+    p.drawLine(QPointF(4, 16), QPointF(4, 19));
+    p.drawLine(QPointF(9, 16), QPointF(9, 19));
+
+    p.setPen(QPen(kAccent, 1.8));
+    p.setBrush(Qt::NoBrush);
+    p.drawEllipse(QRectF(11, 3, 9, 9));
+    p.drawLine(QPointF(17.5, 9.5), QPointF(21.5, 13.5));
+    return QIcon(pm);
+}
+
 QIcon IconFactory::checkDesignIcon()
 {
     QPixmap pm = blankCanvas();

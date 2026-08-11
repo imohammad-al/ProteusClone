@@ -3,7 +3,7 @@
 #include <QMainWindow>
 #include "circuitscene.h"
 #include <QKeyEvent>
-#include <QTreeWidgetItem>
+#include <QListWidgetItem>
 #include <QSize>
 #include "toolmanager.h"
 #include <QUndoStack>
@@ -40,7 +40,11 @@ private:
 
     CircuitScene *scene;
 
-    void initializeComponentTree();
+    // قطعه را (اگر از قبل نبود) به لیست کناری «قطعات فعال» اضافه می‌کند (بخش ۳.۴ مستند).
+    void addComponentToActiveList(const QString &componentName);
+
+    // قطعه‌ی داده‌شده را برای قرارگیری روی بوم با کلیک بعدی آماده می‌کند.
+    void armComponentForPlacement(const QString &componentName);
 
     ToolManager *toolManager;
 
@@ -54,7 +58,7 @@ private:
 
     QString m_currentFilePath; // مسیر فایل پروژه فعلی؛ خالی یعنی هنوز ذخیره نشده (بخش ۱۰.۱ مستند)
 
-    void openComponentSelectionDialog();          // این تابع پنجره‌ی لیست قطعات را باز خواهد کرد
+    void openComponentSelectionDialog();          // پنجره Pick Devices (بخش ۳.۱-۳.۳ مستند) را باز می‌کند
 
     void updateWindowTitle();                      // نام فایل فعلی را در عنوان پنجره نشان می‌دهد
 
@@ -66,11 +70,13 @@ private slots:
 
     void on_actionResistor_triggered();
 
-    void on_treeWidgetComponents_itemDoubleClicked(
-        QTreeWidgetItem *item,
-        int column);
+    void on_actionPickParts_triggered();
 
-    void on_lineEditSearch_textChanged(const QString &text);
+    void on_pushButtonPickParts_clicked();
+
+    void on_pushButtonRemovePart_clicked();
+
+    void on_listWidgetActiveParts_itemClicked(QListWidgetItem *item);
 
     void on_actionNew_triggered();
     void on_actionOpen_triggered();
@@ -83,6 +89,10 @@ private slots:
     void on_actionPause_triggered();
     void on_actionStop_triggered();
     void on_actionStep_triggered();
+
+    void on_actionRotateCW_triggered();
+    void on_actionRotateCCW_triggered();
+    void on_actionMirror_triggered();
 
     void onSimulationStateChanged(SimulationState state);
 };

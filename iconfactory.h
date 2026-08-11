@@ -33,6 +33,7 @@ public:
 
     // --- Tools / Simulation ---
     static QIcon checkDesignIcon();
+    static QIcon pickPartsIcon();
     static QIcon runIcon();
     static QIcon pauseIcon();
     static QIcon stopIcon();

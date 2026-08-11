@@ -4,6 +4,8 @@
 #include "circuitscene.h"
 #include "circuitgraphicsview.h"
 #include "componentfactory.h"
+#include "iconfactory.h"
+#include "pickdevicesdialog.h"
 #include "io/projectserializer.h"
 #include "sim/designrulechecker.h"
 #include "sim/simulationlogger.h"
@@ -18,6 +20,7 @@
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QLabel>
+#include <QToolButton>
 #include "commands/deletecomponentcommand.h"
 #include "commands/deletewirecommand.h"
 #include "commands/rotatecommand.h"
@@ -37,7 +40,6 @@ MainWindow::MainWindow(QWidget *parent)
     // Component Library
     //-----------------------------------------
 
-    initializeComponentTree();
     LibraryManager::initialize();
 
     toolManager = new ToolManager(this);
@@ -68,16 +70,71 @@ MainWindow::MainWindow(QWidget *parent)
     onSimulationStateChanged(SimulationState::Stopped);
 
     ui->actionResistor->setText("Components");
-    ui->mainToolBar->addAction(ui->actionSelect);
-    ui->mainToolBar->addAction(ui->actionWire);
-    ui->mainToolBar->addAction(ui->actionResistor);
-    ui->mainToolBar->addAction(
-        undoStack->createUndoAction(this,"Undo"));
+    ui->actionResistor->setToolTip(tr("Place Component (last used: %1)").arg(m_lastSelectedComponent));
 
-    ui->mainToolBar->addAction(
-        undoStack->createRedoAction(this,"Redo"));
+    //-----------------------------------------
+    // آیکون‌ها (بخش «تکمیل ظاهری» - شبیه‌سازی نوار ابزارهای واقعی پروتئوس،
+    // به IconFactory واگذار شده تا هیچ فایل تصویری خارجی لازم نباشد)
+    //-----------------------------------------
+
+    ui->actionNew->setIcon(IconFactory::newProjectIcon());
+    ui->actionOpen->setIcon(IconFactory::openProjectIcon());
+    ui->actionSave->setIcon(IconFactory::saveProjectIcon());
+    ui->actionSaveAs->setIcon(IconFactory::saveAsIcon());
+    ui->actionExportImage->setIcon(IconFactory::exportImageIcon());
+
+    ui->actionSelect->setIcon(IconFactory::selectIcon());
+    ui->actionWire->setIcon(IconFactory::wireIcon());
+    ui->actionResistor->setIcon(IconFactory::placeComponentIcon());
+    ui->actionRotateCW->setIcon(IconFactory::rotateCwIcon());
+    ui->actionRotateCCW->setIcon(IconFactory::rotateCcwIcon());
+    ui->actionMirror->setIcon(IconFactory::mirrorIcon());
+
+    ui->actionCheckDesign->setIcon(IconFactory::checkDesignIcon());
+    ui->actionPickParts->setIcon(IconFactory::pickPartsIcon());
+    ui->pushButtonPickParts->setIcon(IconFactory::pickPartsIcon());
+    ui->actionRun->setIcon(IconFactory::runIcon());
+    ui->actionPause->setIcon(IconFactory::pauseIcon());
+    ui->actionStop->setIcon(IconFactory::stopIcon());
+    ui->actionStep->setIcon(IconFactory::stepIcon());
+
+    ui->actionZoomIn->setIcon(IconFactory::zoomInIcon());
+    ui->actionZoomOut->setIcon(IconFactory::zoomOutIcon());
+    ui->actionZoomReset->setIcon(IconFactory::zoomResetIcon());
+
+    // Undo/Redo با متن پویا (شرح آخرین عمل) از خودِ QUndoStack ساخته می‌شوند،
+    // پس نمی‌توانند از قبل توی مستند Designer (.ui) تعریف شده باشند؛ اینجا هم
+    // آیکون می‌گیرند و هم کنار Save در نوار بالا قرار می‌گیرند - دقیقاً مطابق
+    // چیدمان نوار ابزار اصلی پروتئوس واقعی (New/Open/Save | Undo/Redo | Zoom).
+    QAction *undoAction = undoStack->createUndoAction(this, tr("Undo"));
+    QAction *redoAction = undoStack->createRedoAction(this, tr("Redo"));
+    undoAction->setIcon(IconFactory::undoIcon());
+    redoAction->setIcon(IconFactory::redoIcon());
+    ui->mainToolBar->insertAction(ui->actionZoomIn, undoAction);
+    ui->mainToolBar->insertAction(ui->actionZoomIn, redoAction);
+    ui->mainToolBar->insertSeparator(ui->actionZoomIn);
+
+    //-----------------------------------------
+    // دکمه‌های Run/Pause/Stop/Step روی نوار وضعیت پایین صفحه (نه نوار بالا) -
+    // دقیقاً همان جایی که نرم‌افزار واقعی پروتئوس این دکمه‌ها را نشان می‌دهد.
+    //-----------------------------------------
+    auto addStatusBarToolButton = [this](QAction *action) {
+        auto *button = new QToolButton(this);
+        button->setDefaultAction(action);
+        button->setAutoRaise(true);
+        ui->statusbar->addWidget(button);
+        return button;
+    };
+    addStatusBarToolButton(ui->actionRun);
+    addStatusBarToolButton(ui->actionPause);
+    addStatusBarToolButton(ui->actionStop);
+    addStatusBarToolButton(ui->actionStep);
 
     ui->graphicsView->setScene(scene);
+
+    // یک قطعه پیش‌فرض (Resistor) از ابتدا در لیست قطعات فعال باشد تا کاربر
+    // مجبور نباشد برای اولین قطعه هم حتماً پنجره Pick Devices را باز کند.
+    addComponentToActiveList(m_lastSelectedComponent);
 
     ui->graphicsView->setViewportUpdateMode(
         QGraphicsView::SmartViewportUpdate);
@@ -135,90 +192,59 @@ MainWindow::~MainWindow()
 }
 
 //////////////////////////////////////////////////////////
-// Component Library
+// لیست قطعات فعال (بخش ۳.۴ مستند پروژه) - پنل کناری برای دسترسی سریع به
+// قطعات پرکاربرد؛ کتابخانه‌ی کامل از طریق PickDevicesDialog (بخش ۳.۱-۳.۳)
+// در دسترس است، نه یک درخت همیشه‌باز.
 //////////////////////////////////////////////////////////
-void MainWindow::initializeComponentTree()
+
+void MainWindow::addComponentToActiveList(const QString &componentName)
 {
-    ui->treeWidgetComponents->clear();
-
-    QMap<QString,QTreeWidgetItem*> categories;
-
-    const QList<ComponentInfo> list =
-        LibraryManager::components();
-
-    for(const ComponentInfo &info : list)
-    {
-        QTreeWidgetItem *categoryItem = nullptr;
-
-        if(categories.contains(info.category))
-        {
-            categoryItem = categories[info.category];
-        }
-        else
-        {
-            categoryItem =
-                new QTreeWidgetItem(ui->treeWidgetComponents);
-
-            categoryItem->setText(0, info.category);
-
-            categories.insert(info.category, categoryItem);
-        }
-
-        QTreeWidgetItem *component =
-            new QTreeWidgetItem(categoryItem);
-
-        component->setText(0, info.name);
-
-        component->setToolTip(0, info.description);
-    }
-
-    ui->treeWidgetComponents->expandAll();
-}
-//////////////////////////////////////////////////////////
-// Double Click Component
-//////////////////////////////////////////////////////////
-
-void MainWindow::on_treeWidgetComponents_itemDoubleClicked(
-    QTreeWidgetItem *item,
-    int)
-{
-    // اگر روی یک گروه (Passive، Sources و...) کلیک شده
-    if(item->childCount() > 0)
+    // اگر از قبل توی لیست بود، دوباره اضافه نکن (بدون آیتم تکراری)
+    const QList<QListWidgetItem *> existing =
+        ui->listWidgetActiveParts->findItems(componentName, Qt::MatchExactly);
+    if (!existing.isEmpty())
         return;
-    toolManager->setCurrentTool(
-        Tool::PlaceComponent);
-    qDebug() << "Tool = PlaceComponent";
 
-    toolManager->setComponentName(
-        item->text(0));
-    scene->beginComponentPlacement(
-        item->text(0));
+    ui->listWidgetActiveParts->addItem(componentName);
 }
 
-//////////////////////////////////////////////////////////
-// Library Search Filter (بخش ۳.۲ مستند پروژه)
-//////////////////////////////////////////////////////////
-
-void MainWindow::on_lineEditSearch_textChanged(const QString &text)
+void MainWindow::armComponentForPlacement(const QString &componentName)
 {
-    const QString needle = text.trimmed().toLower();
+    toolManager->setCurrentTool(Tool::PlaceComponent);
+    toolManager->setComponentName(componentName);
+    scene->beginComponentPlacement(componentName);
 
-    for (int i = 0; i < ui->treeWidgetComponents->topLevelItemCount(); ++i) {
-        QTreeWidgetItem *category = ui->treeWidgetComponents->topLevelItem(i);
-        bool anyVisibleChild = false;
+    m_lastSelectedComponent = componentName;
+    ui->actionResistor->setText(componentName);
+    ui->actionResistor->setToolTip(tr("Place Component (last used: %1)").arg(componentName));
+}
 
-        for (int j = 0; j < category->childCount(); ++j) {
-            QTreeWidgetItem *child = category->child(j);
-            const bool matches = needle.isEmpty() || child->text(0).toLower().contains(needle);
-            child->setHidden(!matches);
-            if (matches)
-                anyVisibleChild = true;
-        }
+void MainWindow::on_listWidgetActiveParts_itemClicked(QListWidgetItem *item)
+{
+    if (!item)
+        return;
+    // طبق بخش ۳.۴ مستند: «با کلیک روی هر آیتم در این لیست، آن قطعه آماده‌ی
+    // قرارگیری روی بوم می‌شود»
+    armComponentForPlacement(item->text());
+}
 
-        category->setHidden(!anyVisibleChild);
-        if (!needle.isEmpty() && anyVisibleChild)
-            category->setExpanded(true);
-    }
+void MainWindow::on_pushButtonRemovePart_clicked()
+{
+    // بخش ۳.۴ مستند: «طبیعتاً امکان حذف قطعات از این لیست هم باید وجود داشته باشد»
+    QListWidgetItem *item = ui->listWidgetActiveParts->currentItem();
+    if (!item)
+        return;
+    delete ui->listWidgetActiveParts->takeItem(ui->listWidgetActiveParts->row(item));
+}
+
+void MainWindow::on_actionPickParts_triggered()
+{
+    openComponentSelectionDialog();
+}
+
+void MainWindow::on_pushButtonPickParts_clicked()
+{
+    openComponentSelectionDialog();
 }
 
 //////////////////////////////////////////////////////////
@@ -359,41 +385,51 @@ void MainWindow::on_actionResistor_triggered()
     }
 
     // در غیر این صورت، با یک‌بار کلیک، آخرین قطعه انتخاب شده سریعاً فعال می‌شود
-    toolManager->setCurrentTool(Tool::PlaceComponent);
-    toolManager->setComponentName(m_lastSelectedComponent);
-    scene->beginComponentPlacement(m_lastSelectedComponent);
-
-    qDebug() << "قطعه فعال شد:" << m_lastSelectedComponent;
+    armComponentForPlacement(m_lastSelectedComponent);
 }
+//////////////////////////////////////////////////////////
+// نوار ابزار حالت‌ها: چرخش و قرینه‌سازی (بخش ۴.۴/۴.۵ مستند) - همان منطق
+// keyPressEvent (کلیدهای R/M)، فقط این‌بار از روی دکمه‌های آیکونی نوار کناری
+//////////////////////////////////////////////////////////
+
+void MainWindow::on_actionRotateCW_triggered()
+{
+    for (QGraphicsItem *item : scene->selectedItems())
+        if (undoStack)
+            undoStack->push(new RotateCommand(scene, item, 90));
+}
+
+void MainWindow::on_actionRotateCCW_triggered()
+{
+    for (QGraphicsItem *item : scene->selectedItems())
+        if (undoStack)
+            undoStack->push(new RotateCommand(scene, item, -90));
+}
+
+void MainWindow::on_actionMirror_triggered()
+{
+    for (QGraphicsItem *item : scene->selectedItems()) {
+        if (dynamic_cast<Wire*>(item))
+            continue; // آینه‌کردن فقط برای قطعات معنا دارد، نه سیم‌ها
+        if (undoStack)
+            undoStack->push(new MirrorCommand(scene, item));
+    }
+}
+
 void MainWindow::openComponentSelectionDialog()
 {
-    // ۱. ساختن یک لیست متنی خالی
-    QStringList items;
+    // پنجره Pick Devices واقعی (بخش ۳.۱-۳.۳ مستند) - جایگزین QInputDialog::getItem
+    // ساده‌ی قبلی؛ شامل جستجوی زنده (روی نام و دسته)، دسته‌بندی درختی و پیش‌نمایش زنده.
+    PickDevicesDialog dialog(this);
+    if (dialog.exec() != QDialog::Accepted)
+        return;
 
-    // ۲. گرفتن تمام قطعاتی که در LibraryManager ثبت کرده بودیم (مقاومت، خازن، دیود، منبع)
-    const auto list = LibraryManager::components();
-    for(const ComponentInfo &info : list) {
-        items << info.name; // نام تک‌تک قطعات را داخل لیست می‌ریزیم
-    }
+    const QString selectedItem = dialog.selectedComponentName();
+    if (selectedItem.isEmpty())
+        return;
 
-    // ۳. این خط یک پنجره کوچک آماده روی صفحه باز می‌کند که لیست قطعات داخلش است
-    bool ok;
-    QString selectedItem = QInputDialog::getItem(this, "انتخاب قطعه",
-                                                 "لطفاً قطعه مورد نظر خود را انتخاب کنید:",
-                                                 items, 0, false, &ok);
-    // ۴. اگر کاربر یک قطعه را انتخاب کرد و دکمه OK را زد:
-    if (ok && !selectedItem.isEmpty()) {
-        m_lastSelectedComponent = selectedItem; // نام قطعه جدید را ذخیره کن تا یادش بماند
-
-        // ۵. فعال کردن قطعه انتخاب شده روی بوم مدار (دقیقاً بر اساس کدهای پروژه شما)
-        toolManager->setCurrentTool(Tool::PlaceComponent);
-        toolManager->setComponentName(selectedItem);
-        scene->beginComponentPlacement(selectedItem);
-
-        // ۶. تغییر نام پویا و زنده دکمه تولبار به نام قطعه انتخاب شده (جدید)
-        ui->actionResistor->setText(selectedItem);
-    }
-
+    armComponentForPlacement(selectedItem);
+    addComponentToActiveList(selectedItem); // بخش ۳.۴ مستند: به لیست قطعات فعال هم اضافه شود
 }
 
 
@@ -581,6 +617,9 @@ void MainWindow::onSimulationStateChanged(SimulationState state)
     ui->actionStop->setEnabled(!stopped);
     ui->actionStep->setEnabled(!running);
 
-    // در حین اجرای پیوسته، تغییر مستقیم مدار (جابجایی/سیم‌کشی) گیج‌کننده و مستعد خطاست
-    ui->treeWidgetComponents->setEnabled(!running);
+    // در حین اجرای پیوسته، تغییر مستقیم مدار (جابجایی/سیم‌کشی/قطعه جدید) گیج‌کننده و مستعد خطاست
+    ui->listWidgetActiveParts->setEnabled(!running);
+    ui->pushButtonPickParts->setEnabled(!running);
+    ui->pushButtonRemovePart->setEnabled(!running);
+    ui->actionPickParts->setEnabled(!running);
 }
