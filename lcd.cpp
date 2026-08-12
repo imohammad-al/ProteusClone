@@ -25,7 +25,7 @@ QRectF LCD::boundingRect() const { return QRectF(-95, -55, 210, 110); }
 QPainterPath LCD::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 Component* LCD::clone() const { return new LCD(); }
 
-void LCD::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void LCD::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     // بدنه نمایشگر (سبز تیره، شبیه پس‌زمینه واقعی LCDهای کاراکتری)
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QColor(40, 70, 40));
@@ -56,6 +56,7 @@ void LCD::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) 
     }
 
     painter->drawText(-78, -50, name());
+    paintSelectionOverlay(painter, option);
 }
 
 void LCD::simulationTick()

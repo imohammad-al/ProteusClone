@@ -22,6 +22,13 @@ public:
     SimulationElement simulationModel() override { return SimulationElement(); }
 
     LogicValue computeOutput() const override;
+
+    // پایه دیجیتال خروجی همیشه اندیس ۰ است (نه آخرین پایه - پایه‌های ۱/۲ ترمینال‌های
+    // آنالوگ‌اند). بدون این override، پیاده‌سازی پیش‌فرض DigitalComponent مقدار محاسبه‌شده
+    // را روی پایه آخر (ترمینال آنالوگ B) می‌راند و پایه دیجیتال واقعی هیچ‌وقت مقدار
+    // نمی‌گیرد - یک باگ واقعی جدا که هنگام بررسی LED پیدا شد (اگر LED به پایه دیجیتال
+    // این قطعه وصل شود، هیچ‌وقت روشن نمی‌شد).
+    int outputPinIndex() const override { return 0; }
 };
 
 // --- شاسی فشاری (Push Button) ---
@@ -40,6 +47,9 @@ public:
     SimulationElement simulationModel() override { return SimulationElement(); }
 
     LogicValue computeOutput() const override;
+
+    // همان دلیل Switch بالا - پایه دیجیتال خروجی پایه ۰ است، نه پایه آخر.
+    int outputPinIndex() const override { return 0; }
 };
 
 // --- LED ---

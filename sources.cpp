@@ -15,13 +15,14 @@ Ground::Ground() {
     p1->setDrivenValue(LogicValue::Low);
 }
 QRectF Ground::boundingRect() const { return QRectF(-20, -25, 40, 45); }
-QPainterPath Ground::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void Ground::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+QPainterPath Ground::shape() const { QPainterPath p; p.addRect(QRectF(-15, -2, 30, 14)); return p; }
+void Ground::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(0, -20, 0, 0);      // سیم اتصال
     painter->drawLine(-15, 0, 15, 0);     // خط اول زمین
     painter->drawLine(-10, 5, 10, 5);     // خط دوم
     painter->drawLine(-5, 10, 5, 10);     // خط سوم نوک تیز
+    paintSelectionOverlay(painter, option);
 }
 
 // اضافه شد clone پیاده‌سازی متد
@@ -46,14 +47,15 @@ DCVoltage::DCVoltage() {
     p2->setDrivenValue(LogicValue::Low);
 }
 QRectF DCVoltage::boundingRect() const { return QRectF(-35, -20, 70, 40); }
-QPainterPath DCVoltage::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void DCVoltage::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+QPainterPath DCVoltage::shape() const { QPainterPath p; p.addEllipse(QPointF(0, 0), 15, 15); return p; }
+void DCVoltage::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-30, 0, -15, 0);
     painter->drawLine(15, 0, 30, 0);
     painter->drawEllipse(QPointF(0, 0), 15, 15); // دایره منبع ولتاژ
     painter->drawText(-10, 5, "+  -");
     painter->drawText(-10, -20, name() + " (" + property("voltage").toString() + "V)");
+    paintSelectionOverlay(painter, option);
 }
 
 // اضافه شد clone پیاده‌سازی متد
@@ -79,8 +81,8 @@ Battery::Battery() {
     p2->setDrivenValue(LogicValue::Low);
 }
 QRectF Battery::boundingRect() const { return QRectF(-35, -20, 70, 40); }
-QPainterPath Battery::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void Battery::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+QPainterPath Battery::shape() const { QPainterPath p; p.addRect(QRectF(-12, -12, 24, 24)); return p; }
+void Battery::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-30, 0, -12, 0);
     painter->drawLine(12, 0, 30, 0);
@@ -90,6 +92,7 @@ void Battery::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget
     painter->drawLine(4, -12, 4, 12);
     painter->drawLine(12, -6, 12, 6);
     painter->drawText(-10, -18, name() + " (" + property("voltage").toString() + "V)");
+    paintSelectionOverlay(painter, option);
 }
 Component* Battery::clone() const { return new Battery(); }
 
@@ -103,9 +106,9 @@ ClockGenerator::ClockGenerator() {
 }
 
 QRectF ClockGenerator::boundingRect() const { return QRectF(-25, -20, 55, 40); }
-QPainterPath ClockGenerator::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath ClockGenerator::shape() const { QPainterPath p; p.addRect(QRectF(-12, -12, 27, 24)); return p; }
 
-void ClockGenerator::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void ClockGenerator::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-20, 0, -12, 0);
     painter->drawLine(15, 0, 25, 0);
@@ -122,6 +125,7 @@ void ClockGenerator::paint(QPainter *painter, const QStyleOptionGraphicsItem *, 
     painter->drawPath(wave);
 
     painter->drawText(-15, -16, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* ClockGenerator::clone() const { return new ClockGenerator(); }

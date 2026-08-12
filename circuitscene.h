@@ -109,6 +109,12 @@ private:
 
     Node* createOrGetNode(Pin *p1, Pin *p2);
 
+    // نزدیک‌ترین سیم به یک نقطه دلخواه (فضای بوم) را در صورتی که فاصله‌اش از
+    // maxDistance کمتر باشد برمی‌گرداند و نزدیک‌ترین پایه (شروع یا پایان) آن سیم
+    // را در outNearestPin می‌گذارد. برای اسنپ خودکار پین به سیم هنگام قرار دادن
+    // قطعه استفاده می‌شود (بخش ۲ درخواست کاربر).
+    Wire* findNearbyWire(const QPointF &scenePos, qreal maxDistance, Pin **outNearestPin) const;
+
     // بعد از جدا شدن یک سیم از یک گره، بررسی می‌کند آیا پین‌های باقیمانده آن گره
     // هنوز (از طریق سیم‌های دیگر) به هم متصل هستند یا باید به چند گره مستقل بشکند.
     void splitNodeIfNeeded(Node *node);

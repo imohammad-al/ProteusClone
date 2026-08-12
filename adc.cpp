@@ -33,7 +33,7 @@ QRectF ADC::boundingRect() const { return QRectF(-50, -40, 100, 80); }
 QPainterPath ADC::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 Component* ADC::clone() const { return new ADC(); }
 
-void ADC::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void ADC::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QColor(230, 230, 250));
     painter->drawRect(QRectF(-35, -35, 70, 70));
@@ -52,6 +52,7 @@ void ADC::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) 
         const qreal y = -35 + i * 10;
         painter->drawLine(QPointF(35, y), QPointF(45, y));
     }
+    paintSelectionOverlay(painter, option);
 }
 
 void ADC::simulationTick()

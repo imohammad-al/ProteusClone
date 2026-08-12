@@ -118,6 +118,12 @@ protected:
     // (مثلاً MCU برای افزودن "Load HEX File..." - بخش ۷.۲ مستند). پیاده‌سازی پیش‌فرض
     // خالی است؛ اگر هیچ زیرکلاسی چیزی اضافه نکند، رفتار دقیقاً مثل قبل (بدون منو) می‌ماند.
     virtual void populateContextMenu(QMenu *menu) { Q_UNUSED(menu); }
+
+    // نشانگر بصری انتخاب: هر زیرکلاس این را در انتهای paint() خودش صدا می‌زند (یک خط اضافه).
+    // وقتی قطعه انتخاب شده باشد (option->state & QStyle::State_Selected)، یک هایلایت نیمه‌شفاف
+    // رنگی + کادر نقطه‌چین روی boundingRect() قطعه رسم می‌کند تا انتخاب با تغییر رنگ محسوس باشد؛
+    // در غیر این صورت هیچ کاری نمی‌کند (بدون افت کارایی برای قطعات انتخاب‌نشده).
+    void paintSelectionOverlay(QPainter *painter, const QStyleOptionGraphicsItem *option) const;
 private:
     // Identity
     QUuid m_id;

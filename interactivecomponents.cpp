@@ -9,13 +9,15 @@ Switch::Switch() {
     setCategory("Interactive");
     setProperty("state", false, "State (ON=High)");
 
-    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out);
+    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out); // 0: دیجیتال (دست‌نخورده)
+    Pin* a = new Pin(this); a->setPos(-20, 20); addPin(a); // 1: ترمینال آنالوگ A (Bidirectional پیش‌فرض)
+    Pin* b = new Pin(this); b->setPos(25, 20);  addPin(b); // 2: ترمینال آنالوگ B
 }
 
-QRectF Switch::boundingRect() const { return QRectF(-25, -20, 55, 40); }
-QPainterPath Switch::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QRectF Switch::boundingRect() const { return QRectF(-25, -20, 55, 50); }
+QPainterPath Switch::shape() const { QPainterPath p; p.addRect(QRectF(-15, -12, 35, 30)); return p; }
 
-void Switch::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void Switch::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     const bool on = property("state").toBool();
 
     painter->setPen(QPen(Qt::black, 2));
@@ -31,8 +33,15 @@ void Switch::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget 
     else
         painter->drawLine(-8, 0, 10, -12);
 
+    // ترمینال‌های آنالوگ (پایه ۱/۲) - همان کلید، فقط دید مداری آنالوگ
+    painter->setPen(QPen(Qt::blue, 1, Qt::DashLine));
+    painter->drawLine(QPointF(-20, 8), QPointF(-20, 20));
+    painter->drawLine(QPointF(25, 8), QPointF(25, 20));
+    painter->drawText(QRectF(-30, 22, 60, 12), Qt::AlignCenter, QStringLiteral("A ⟷ B"));
+
     painter->setPen(QPen(Qt::black, 1));
     painter->drawText(-15, -22, name() + (on ? " [ON]" : " [OFF]"));
+    paintSelectionOverlay(painter, option);
 }
 
 Component* Switch::clone() const { return new Switch(); }
@@ -48,13 +57,15 @@ PushButton::PushButton() {
     setCategory("Interactive");
     setProperty("pressed", false, "Pressed (=High)");
 
-    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out);
+    Pin* out = new Pin(this); out->setPos(25, 0); out->setDirection(PinDirection::Output); addPin(out); // 0: دیجیتال (دست‌نخورده)
+    Pin* a = new Pin(this); a->setPos(-20, 20); addPin(a); // 1: ترمینال آنالوگ A
+    Pin* b = new Pin(this); b->setPos(25, 20);  addPin(b); // 2: ترمینال آنالوگ B
 }
 
-QRectF PushButton::boundingRect() const { return QRectF(-25, -20, 55, 40); }
-QPainterPath PushButton::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QRectF PushButton::boundingRect() const { return QRectF(-25, -20, 55, 50); }
+QPainterPath PushButton::shape() const { QPainterPath p; p.addRect(QRectF(-11, -13, 22, 26)); return p; }
 
-void PushButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void PushButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     const bool pressed = property("pressed").toBool();
 
     painter->setPen(QPen(Qt::black, 2));
@@ -65,7 +76,14 @@ void PushButton::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWid
     painter->drawRect(QRectF(-8, -10, 16, 20));
     painter->setBrush(Qt::NoBrush);
 
+    // ترمینال‌های آنالوگ (پایه ۱/۲) - فقط تا وقتی pressed=true بسته‌اند
+    painter->setPen(QPen(Qt::blue, 1, Qt::DashLine));
+    painter->drawLine(QPointF(-20, 8), QPointF(-20, 20));
+    painter->drawLine(QPointF(25, 8), QPointF(25, 20));
+    painter->drawText(QRectF(-30, 22, 60, 12), Qt::AlignCenter, QStringLiteral("A ⟷ B"));
+
     painter->drawText(-15, -22, name() + (pressed ? " [PRESSED]" : ""));
+    paintSelectionOverlay(painter, option);
 }
 
 Component* PushButton::clone() const { return new PushButton(); }
@@ -84,9 +102,10 @@ LED::LED() {
 }
 
 QRectF LED::boundingRect() const { return QRectF(-15, -25, 30, 50); }
-QPainterPath LED::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+// قلمرو برخورد LED دقیقاً همان دایره‌ی چراغ است (نه کل کادر شامل سیم پایه)
+QPainterPath LED::shape() const { QPainterPath p; p.addEllipse(QPointF(0, -5), 12, 12); return p; }
 
-void LED::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void LED::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     LogicValue value = LogicValue::Undefined;
     if (Pin *p = pin(0)) {
         if (Node *n = p->node())
@@ -105,6 +124,7 @@ void LED::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) 
     painter->setBrush(Qt::NoBrush);
 
     painter->drawText(-10, -20, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* LED::clone() const { return new LED(); }

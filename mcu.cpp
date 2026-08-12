@@ -39,7 +39,7 @@ QPainterPath MCU::shape() const { QPainterPath p; p.addRect(boundingRect()); ret
 
 Component* MCU::clone() const { return new MCU(); }
 
-void MCU::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void MCU::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QColor(50, 50, 60));
     painter->drawRect(QRectF(-40, -35, 80, 75));
@@ -57,6 +57,7 @@ void MCU::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) 
 
     painter->setPen(Qt::black);
     painter->drawText(-38, -40, name());
+    paintSelectionOverlay(painter, option);
 }
 
 void MCU::populateContextMenu(QMenu *menu)

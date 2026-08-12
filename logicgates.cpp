@@ -17,9 +17,9 @@ GateAND::GateAND() {
 }
 
 QRectF GateAND::boundingRect() const { return QRectF(-40, -25, 70, 50); }
-QPainterPath GateAND::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath GateAND::shape() const { QPainterPath p; p.addRect(QRectF(-15, -20, 30, 40)); return p; }
 
-void GateAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GateAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-35, -10, -15, -10);
     painter->drawLine(-35, 10, -15, 10);
@@ -34,6 +34,7 @@ void GateAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget
 
     painter->drawPath(path);
     painter->drawText(-10, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* GateAND::clone() const { return new GateAND(); }
@@ -54,9 +55,9 @@ GateOR::GateOR() {
 }
 
 QRectF GateOR::boundingRect() const { return QRectF(-40, -25, 70, 50); }
-QPainterPath GateOR::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath GateOR::shape() const { QPainterPath p; p.addRect(QRectF(-20, -20, 35, 40)); return p; }
 
-void GateOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GateOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-32, -10, -18, -10);
     painter->drawLine(-32, 10, -18, 10);
@@ -72,6 +73,7 @@ void GateOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget 
 
     painter->drawPath(path);
     painter->drawText(-10, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* GateOR::clone() const { return new GateOR(); }
@@ -91,9 +93,9 @@ GateNOT::GateNOT() {
 }
 
 QRectF GateNOT::boundingRect() const { return QRectF(-40, -20, 70, 40); }
-QPainterPath GateNOT::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath GateNOT::shape() const { QPainterPath p; p.addRect(QRectF(-15, -15, 36, 30)); return p; }
 
-void GateNOT::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GateNOT::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-35, 0, -15, 0);
     painter->drawLine(20, 0, 25, 0);
@@ -108,6 +110,7 @@ void GateNOT::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget
     // حباب نشانگر NOT
     painter->drawEllipse(QPointF(18, 0), 3, 3);
     painter->drawText(-10, -17, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* GateNOT::clone() const { return new GateNOT(); }
@@ -128,9 +131,9 @@ GateNAND::GateNAND() {
 }
 
 QRectF GateNAND::boundingRect() const { return QRectF(-40, -25, 75, 50); }
-QPainterPath GateNAND::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath GateNAND::shape() const { QPainterPath p; p.addRect(QRectF(-15, -20, 36, 40)); return p; }
 
-void GateNAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GateNAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-35, -10, -15, -10);
     painter->drawLine(-35, 10, -15, 10);
@@ -146,6 +149,7 @@ void GateNAND::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidge
     painter->drawPath(path);
     painter->drawEllipse(QPointF(18, 0), 3, 3); // حباب نشانگر NOT روی خروجی AND
     painter->drawText(-10, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* GateNAND::clone() const { return new GateNAND(); }
@@ -166,9 +170,9 @@ GateXOR::GateXOR() {
 }
 
 QRectF GateXOR::boundingRect() const { return QRectF(-40, -25, 70, 50); }
-QPainterPath GateXOR::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath GateXOR::shape() const { QPainterPath p; p.addRect(QRectF(-25, -20, 40, 40)); return p; }
 
-void GateXOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void GateXOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-30, -10, -18, -10);
     painter->drawLine(-30, 10, -18, 10);
@@ -189,6 +193,7 @@ void GateXOR::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget
     painter->drawPath(extraLine);
 
     painter->drawText(-10, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* GateXOR::clone() const { return new GateXOR(); }
@@ -211,9 +216,9 @@ DFlipFlop::DFlipFlop() {
 }
 
 QRectF DFlipFlop::boundingRect() const { return QRectF(-40, -25, 80, 50); }
-QPainterPath DFlipFlop::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath DFlipFlop::shape() const { QPainterPath p; p.addRect(QRectF(-20, -20, 40, 40)); return p; }
 
-void DFlipFlop::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void DFlipFlop::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
 
     painter->drawLine(-35, -15, -20, -15);
@@ -229,6 +234,7 @@ void DFlipFlop::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidg
     painter->drawText(4, 18, "Q'");
 
     painter->drawText(-15, -25, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* DFlipFlop::clone() const { return new DFlipFlop(); }

@@ -34,7 +34,7 @@ QRectF ExternalMemory::boundingRect() const { return QRectF(-60, -45, 120, 100);
 QPainterPath ExternalMemory::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 Component* ExternalMemory::clone() const { return new ExternalMemory(); }
 
-void ExternalMemory::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void ExternalMemory::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QColor(220, 220, 220));
     painter->drawRect(QRectF(-45, -40, 90, 80));
@@ -53,6 +53,7 @@ void ExternalMemory::paint(QPainter *painter, const QStyleOptionGraphicsItem *, 
     }
     painter->drawLine(QPointF(0, 40), QPointF(0, 45));
     painter->drawText(QRectF(-10, 28, 20, 12), Qt::AlignCenter, QStringLiteral("WE"));
+    paintSelectionOverlay(painter, option);
 }
 
 void ExternalMemory::simulationTick()

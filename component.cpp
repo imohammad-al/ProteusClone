@@ -3,6 +3,9 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QMenu>
+#include <QPainter>
+#include <QStyleOptionGraphicsItem>
+#include <QStyle>
 
 
 
@@ -153,6 +156,23 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         }
     }
     return QGraphicsItem::itemChange(change, value);
+}
+
+// --- نشانگر بصری انتخاب (مشترک بین همه زیرکلاس‌ها) ---
+// هر زیرکلاس این را به‌عنوان آخرین خط paint() خودش صدا می‌زند. وقتی قطعه انتخاب
+// نشده باشد بلافاصله برمی‌گردد (بدون هیچ هزینه‌ای)؛ در غیر این صورت یک هایلایت
+// آبی نیمه‌شفاف روی کل boundingRect() قطعه به‌علاوه یک کادر نقطه‌چین می‌کشد تا
+// انتخاب با «تغییر رنگ» محسوس باشد (نه فقط یک لبه ظریف که ممکن است دیده نشود).
+void Component::paintSelectionOverlay(QPainter *painter, const QStyleOptionGraphicsItem *option) const
+{
+    if (!option || !(option->state & QStyle::State_Selected))
+        return;
+
+    painter->save();
+    painter->setBrush(QColor(30, 144, 255, 60)); // آبی نیمه‌شفاف - همپوشان روی رنگ اصلی قطعه
+    painter->setPen(QPen(QColor(30, 144, 255), 1.5, Qt::DashLine));
+    painter->drawRect(boundingRect());
+    painter->restore();
 }
 
 // mouseDoubleClickEvent عمداً اینجا حذف شد — به component.h مراجعه کن.

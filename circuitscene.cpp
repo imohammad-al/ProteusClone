@@ -18,6 +18,8 @@
 #include <QKeyEvent>
 #include <QFile>
 #include <QKeyEvent>
+#include <QLineF>
+#include <limits>
 
 CircuitScene::CircuitScene(QObject *parent)
     : QGraphicsScene(parent)
@@ -253,6 +255,49 @@ void CircuitScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 
     QGraphicsScene::mouseReleaseEvent(event);
 }
+// نزدیک‌ترین سیم به یک نقطه دلخواه (برای اسنپ خودکار پین هنگام قرار دادن قطعه - بخش ۲ درخواست کاربر)
+Wire* CircuitScene::findNearbyWire(const QPointF &scenePos, qreal maxDistance, Pin **outNearestPin) const
+{
+    if (outNearestPin) *outNearestPin = nullptr;
+
+    Wire *best = nullptr;
+    qreal bestDist = maxDistance;
+
+    for (Wire *w : m_wires) {
+        if (!w) continue;
+
+        const QVector<QPointF> pts = w->points();
+        for (int i = 0; i + 1 < pts.size(); ++i) {
+            const QPointF a = pts.at(i);
+            const QPointF b = pts.at(i + 1);
+
+            // فاصله نقطه scenePos تا پاره‌خط ab (تصویر روی پاره‌خط، محدود به دو سر آن)
+            const QPointF ab = b - a;
+            const qreal lenSq = QPointF::dotProduct(ab, ab);
+            qreal t = 0.0;
+            if (lenSq > 1e-9)
+                t = qBound(0.0, QPointF::dotProduct(scenePos - a, ab) / lenSq, 1.0);
+            const QPointF closest = a + t * ab;
+            const qreal dist = QLineF(scenePos, closest).length();
+
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = w;
+            }
+        }
+    }
+
+    if (best && outNearestPin) {
+        Pin *a = best->startPin();
+        Pin *b = best->endPin();
+        const qreal distA = a ? QLineF(scenePos, a->scenePos()).length() : std::numeric_limits<qreal>::max();
+        const qreal distB = b ? QLineF(scenePos, b->scenePos()).length() : std::numeric_limits<qreal>::max();
+        *outNearestPin = (distA <= distB) ? a : b;
+    }
+
+    return best;
+}
+
 Node *CircuitScene::createOrGetNode(Pin *p1, Pin *p2)
 {
     Node *n1 = p1 ? p1->node() : nullptr;
@@ -270,6 +315,14 @@ Node *CircuitScene::createOrGetNode(Pin *p1, Pin *p2)
 
         net->addPin(p1);
         net->addPin(p2);
+
+        // 🔴 رفع باگ اصلی: node->addPin() هم باید صدا زده شود، نه فقط net->addPin().
+        // Node::resolvedValue() (که LED/Wire/DigitalComponent برای رنگ زنده و انتشار
+        // مقدار دیجیتال به آن وابسته‌اند) از روی Node::m_pins می‌خواند، نه از Net.
+        // بدون این دو خط، m_pins همیشه خالی می‌ماند و resolvedValue() همیشه Undefined
+        // برمی‌گرداند - یعنی هیچ LED یا سیمی هرگز رنگ زنده نمی‌گرفت.
+        node->addPin(p1);
+        node->addPin(p2);
 
         node->setNet(net);
 
@@ -293,6 +346,7 @@ Node *CircuitScene::createOrGetNode(Pin *p1, Pin *p2)
     if(n1 && !n2)
     {
         n1->net()->addPin(p2);
+        n1->addPin(p2); // 🔴 همان رفع باگ بالا
         return n1;
     }
 
@@ -304,6 +358,7 @@ Node *CircuitScene::createOrGetNode(Pin *p1, Pin *p2)
     if(!n1 && n2)
     {
         n2->net()->addPin(p1);
+        n2->addPin(p1); // 🔴 همان رفع باگ بالا
         return n2;
     }
 
@@ -333,6 +388,8 @@ void CircuitScene::mergeNodes(Node *a, Node *b)
     for(Pin *pin : pins)
     {
         pin->setNode(a);
+
+        a->addPin(pin); // 🔴 همان رفع باگ - قبلاً فقط به Net اضافه می‌شد نه به Node مقصد
 
         if(netA)
             netA->addPin(pin);
@@ -678,7 +735,10 @@ void CircuitScene::handlePlaceComponentToolPress(QGraphicsSceneMouseEvent *event
     for(QGraphicsItem *other : collidingList) {
         if (other == m_previewItem || other->parentItem() == m_previewItem)
             continue;
-        if (dynamic_cast<Wire*>(other) || dynamic_cast<Pin*>(other) || other->type() == QGraphicsTextItem::Type)
+        // سیم‌ها، پایه‌ها و نقاط Junction هرگز مانع قرار دادن قطعه نمی‌شوند - بخش ۱ و ۲
+        // درخواست کاربر: کلیک نزدیک سیم باید باعث اتصال خودکار شود، نه رد شدن قرارگیری.
+        if (dynamic_cast<Wire*>(other) || dynamic_cast<Pin*>(other) || dynamic_cast<Junction*>(other)
+            || other->type() == QGraphicsTextItem::Type)
             continue;
 
         collision = true;
@@ -686,11 +746,36 @@ void CircuitScene::handlePlaceComponentToolPress(QGraphicsSceneMouseEvent *event
     }
 
     if (!collision) {
+        if (m_undoStack) m_undoStack->beginMacro(tr("Place Component"));
+
         if (m_undoStack) {
             m_undoStack->push(new AddComponentCommand(this, item));
         } else {
             addItem(item);
         }
+
+        // --- اسنپ خودکار پین به نزدیک‌ترین سیم (بخش ۲ درخواست کاربر) ---
+        // اگر یکی از پایه‌های قطعه تازه‌قرارگرفته به فاصله نزدیک یک سیم موجود باشد،
+        // به‌جای رها کردن قطعه بدون اتصال، به‌صورت خودکار یک سیم جدید از آن پایه به
+        // نزدیک‌ترین سر آن سیم (شروع یا پایان) رسم می‌شود تا در همان گره/شبکه قرار گیرد.
+        if (Component *newComp = dynamic_cast<Component*>(item)) {
+            constexpr qreal kWireSnapDistance = 15.0;
+            for (Pin *p : newComp->pins()) {
+                if (!p) continue;
+
+                Pin *targetPin = nullptr;
+                Wire *nearWire = findNearbyWire(p->scenePos(), kWireSnapDistance, &targetPin);
+                if (nearWire && targetPin && targetPin != p) {
+                    if (Wire *newWire = connectPins(p, targetPin)) {
+                        if (m_undoStack)
+                            m_undoStack->push(new AddWireCommand(this, newWire));
+                    }
+                    break; // فقط یک اتصال خودکار به ازای هر قرار دادن (بدون رشته سیم‌های ناخواسته)
+                }
+            }
+        }
+
+        if (m_undoStack) m_undoStack->endMacro();
     } else {
         delete item; // اگر برخورد داشت، قطعه حذف می‌شود
     }

@@ -12,14 +12,17 @@ Resistor::Resistor() {
     Pin* p2 = new Pin(this); p2->setPos(40, 0);  addPin(p2);
 }
 QRectF Resistor::boundingRect() const { return QRectF(-45, -15, 90, 30); }
-QPainterPath Resistor::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void Resistor::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+// قلمرو برخورد فقط بدنه واقعی مقاومت است (نه سیم‌های رابط تا پایه‌ها) تا قطعات
+// بتوانند خیلی نزدیک به هم قرار بگیرند - بخش ۱ درخواست کاربر.
+QPainterPath Resistor::shape() const { QPainterPath p; p.addRect(QRectF(-25, -10, 50, 20)); return p; }
+void Resistor::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-40, 0, -25, 0);
     painter->drawRect(-25, -10, 50, 20);
     painter->drawLine(25, 0, 40, 0);
     painter->drawText(-15, -15, name());
     painter->drawText(-15, 25, property("resistance").toString() + " Ω");
+    paintSelectionOverlay(painter, option);
 }
 
 // --- Capacitor ---
@@ -32,14 +35,15 @@ Capacitor::Capacitor() {
     Pin* p2 = new Pin(this); p2->setPos(30, 0);  addPin(p2);
 }
 QRectF Capacitor::boundingRect() const { return QRectF(-35, -20, 70, 40); }
-QPainterPath Capacitor::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void Capacitor::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+QPainterPath Capacitor::shape() const { QPainterPath p; p.addRect(QRectF(-13, -15, 26, 30)); return p; }
+void Capacitor::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-30, 0, -10, 0);
     painter->drawLine(10, 0, 30, 0);
     painter->drawLine(-10, -15, -10, 15);
     painter->drawLine(10, -15, 10, 15);
     painter->drawText(-10, -20, name());
+    paintSelectionOverlay(painter, option);
 }
 
 // --- Inductor ---
@@ -52,8 +56,8 @@ Inductor::Inductor() {
     Pin* p2 = new Pin(this); p2->setPos(40, 0);  addPin(p2);
 }
 QRectF Inductor::boundingRect() const { return QRectF(-45, -15, 90, 30); }
-QPainterPath Inductor::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
-void Inductor::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+QPainterPath Inductor::shape() const { QPainterPath p; p.addRect(QRectF(-20, -10, 40, 20)); return p; }
+void Inductor::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-40, 0, -20, 0);
     // رسم یک موج ساده برای سلف
@@ -62,4 +66,5 @@ void Inductor::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidge
     }
     painter->drawLine(20, 0, 40, 0);
     painter->drawText(-10, -15, name());
+    paintSelectionOverlay(painter, option);
 }

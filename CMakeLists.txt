@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(ProteusClone LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Widgets)
 
 qt_standard_project_setup()
 
@@ -81,9 +81,14 @@ install(TARGETS ProteusClone
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-qt_generate_deploy_app_script(
-    TARGET ProteusClone
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
-)
-install(SCRIPT ${deploy_script})
+# qt_generate_deploy_app_script() با آرگومان OUTPUT_SCRIPT فقط در Qt 6.5+ پشتیبانی می‌شود؛
+# روی Qt 6.4 (کف نسخه‌ای که بالا اعلام شده) خطای پیکربندی می‌دهد. این بخش صرفاً اسکریپت
+# نصب/بسته‌بندی برنامه است و ربطی به منطق برنامه ندارد، پس فقط وقتی Qt 6.5+ موجود باشد اجرا می‌شود.
+if(QT_VERSION VERSION_GREATER_EQUAL 6.5)
+    qt_generate_deploy_app_script(
+        TARGET ProteusClone
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
+    )
+    install(SCRIPT ${deploy_script})
+endif()

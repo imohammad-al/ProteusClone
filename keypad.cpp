@@ -56,7 +56,7 @@ bool Keypad::findPressedPosition(int *row, int *col) const
     return false;
 }
 
-void Keypad::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void Keypad::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     int pressedRow = -1, pressedCol = -1;
     const bool hasPressed = findPressedPosition(&pressedRow, &pressedCol);
 
@@ -90,6 +90,7 @@ void Keypad::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget 
     }
 
     painter->drawText(-40, -40, name());
+    paintSelectionOverlay(painter, option);
 }
 
 void Keypad::simulationTick()

@@ -31,7 +31,7 @@ QRectF DAC::boundingRect() const { return QRectF(-50, -40, 100, 80); }
 QPainterPath DAC::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
 Component* DAC::clone() const { return new DAC(); }
 
-void DAC::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void DAC::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->setBrush(QColor(250, 235, 215));
     painter->drawRect(QRectF(-35, -35, 70, 70));
@@ -50,6 +50,7 @@ void DAC::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) 
         painter->drawLine(QPointF(35, y), QPointF(45, y));
         painter->drawText(QRectF(38, y - 6, 12, 12), Qt::AlignCenter, kAnalogLabels[i]);
     }
+    paintSelectionOverlay(painter, option);
 }
 
 void DAC::simulationTick()

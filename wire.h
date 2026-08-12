@@ -18,6 +18,11 @@ public:
     // تابع کلیدی پروپوزال برای بازسازی هندسه سیم هنگام جابجایی قطعات
     void rebuildGeometry();
 
+    // نقاط شکست مسیر سیم (شروع، نقطه واسط ۹۰ درجه، پایان) در فضای بوم - برای
+    // محاسبه فاصله از یک نقطه دلخواه تا این سیم (اسنپ خودکار پین هنگام قرار دادن
+    // قطعه نزدیک یک سیم - بخش ۲ درخواست کاربر).
+    QVector<QPointF> points() const { return m_points; }
+
     QRectF boundingRect() const override;
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 

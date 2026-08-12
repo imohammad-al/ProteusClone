@@ -14,9 +14,9 @@ LogicProbe::LogicProbe() {
 }
 
 QRectF LogicProbe::boundingRect() const { return QRectF(-15, -20, 30, 40); }
-QPainterPath LogicProbe::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath LogicProbe::shape() const { QPainterPath p; p.addEllipse(QPointF(0, -3), 12, 12); return p; }
 
-void LogicProbe::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void LogicProbe::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     LogicValue value = LogicValue::Undefined;
     if (Pin *p = pin(0)) {
         if (Node *n = p->node())
@@ -36,6 +36,7 @@ void LogicProbe::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWid
     painter->setBrush(Qt::NoBrush);
 
     painter->drawText(QRectF(-8, -11, 16, 16), Qt::AlignCenter, label);
+    paintSelectionOverlay(painter, option);
 }
 
 Component* LogicProbe::clone() const { return new LogicProbe(); }
@@ -50,9 +51,9 @@ DigitalVoltmeter::DigitalVoltmeter() {
 }
 
 QRectF DigitalVoltmeter::boundingRect() const { return QRectF(-30, -35, 60, 65); }
-QPainterPath DigitalVoltmeter::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath DigitalVoltmeter::shape() const { QPainterPath p; p.addEllipse(QPointF(0, -3), 22, 22); return p; }
 
-void DigitalVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void DigitalVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     LogicValue value = LogicValue::Undefined;
     if (Pin *p = pin(0)) {
         if (Node *n = p->node())
@@ -71,6 +72,7 @@ void DigitalVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *
 
     painter->drawText(QRectF(-20, -13, 40, 20), Qt::AlignCenter, text);
     painter->drawText(-15, -30, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* DigitalVoltmeter::clone() const { return new DigitalVoltmeter(); }
@@ -88,9 +90,9 @@ AnalogVoltmeter::AnalogVoltmeter() {
 }
 
 QRectF AnalogVoltmeter::boundingRect() const { return QRectF(-30, -25, 60, 50); }
-QPainterPath AnalogVoltmeter::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath AnalogVoltmeter::shape() const { QPainterPath p; p.addEllipse(QPointF(0, 0), 18, 18); return p; }
 
-void AnalogVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void AnalogVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     Node *nPlus = pin(0) ? pin(0)->node() : nullptr;
     Node *nMinus = pin(1) ? pin(1)->node() : nullptr;
 
@@ -106,6 +108,7 @@ void AnalogVoltmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     painter->drawEllipse(QPointF(0, 0), 18, 18);
     painter->drawText(QRectF(-18, -10, 36, 20), Qt::AlignCenter, text);
     painter->drawText(-15, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* AnalogVoltmeter::clone() const { return new AnalogVoltmeter(); }
@@ -123,9 +126,9 @@ AnalogAmmeter::AnalogAmmeter() {
 }
 
 QRectF AnalogAmmeter::boundingRect() const { return QRectF(-30, -25, 60, 50); }
-QPainterPath AnalogAmmeter::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath AnalogAmmeter::shape() const { QPainterPath p; p.addEllipse(QPointF(0, 0), 18, 18); return p; }
 
-void AnalogAmmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void AnalogAmmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     QString text = QStringLiteral("--");
     if (m_hasMeasurement) {
         const double absVal = std::fabs(m_measuredCurrent);
@@ -143,6 +146,7 @@ void AnalogAmmeter::paint(QPainter *painter, const QStyleOptionGraphicsItem *, Q
     painter->drawEllipse(QPointF(0, 0), 18, 18);
     painter->drawText(QRectF(-18, -10, 36, 20), Qt::AlignCenter, text);
     painter->drawText(-15, -22, name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* AnalogAmmeter::clone() const { return new AnalogAmmeter(); }
@@ -168,9 +172,9 @@ Oscilloscope::Oscilloscope() {
 }
 
 QRectF Oscilloscope::boundingRect() const { return QRectF(-70, -45, 150, 90); }
-QPainterPath Oscilloscope::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath Oscilloscope::shape() const { QPainterPath p; p.addRect(QRectF(-60, -35, 130, 65)); return p; }
 
-void Oscilloscope::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void Oscilloscope::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-70, -15, -60, -15);
     painter->drawLine(-70, 15, -60, 15);
@@ -205,6 +209,7 @@ void Oscilloscope::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QW
 
     painter->setPen(Qt::black);
     painter->drawText(-25, -40, name().isEmpty() ? "Scope" : name());
+    paintSelectionOverlay(painter, option);
 }
 
 Component* Oscilloscope::clone() const { return new Oscilloscope(); }

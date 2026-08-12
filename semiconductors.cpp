@@ -17,9 +17,9 @@ Diode::Diode() {
 }
 
 QRectF Diode::boundingRect() const { return QRectF(-35, -20, 70, 40); }
-QPainterPath Diode::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath Diode::shape() const { QPainterPath p; p.addRect(QRectF(-11, -13, 22, 26)); return p; }
 
-void Diode::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void Diode::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
     painter->drawLine(-30, 0, -10, 0);
     painter->drawLine(10, 0, 30, 0);
@@ -30,6 +30,7 @@ void Diode::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *
     painter->drawPolygon(triangle);
     painter->drawLine(10, -12, 10, 12); // خط کاتد
     painter->drawText(-10, -18, name());
+    paintSelectionOverlay(painter, option);
 }
 
 // پیاده‌سازی متد کلون برای دیود
@@ -58,9 +59,9 @@ TransistorNPN::TransistorNPN() {
 }
 
 QRectF TransistorNPN::boundingRect() const { return QRectF(-30, -35, 55, 70); }
-QPainterPath TransistorNPN::shape() const { QPainterPath p; p.addRect(boundingRect()); return p; }
+QPainterPath TransistorNPN::shape() const { QPainterPath p; p.addRect(QRectF(-5, -30, 22, 60)); return p; }
 
-void TransistorNPN::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWidget *) {
+void TransistorNPN::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *) {
     painter->setPen(QPen(Qt::black, 2));
 
     // رسم پایه‌ها و ساختار داخلی ترانزیستور
@@ -76,6 +77,7 @@ void TransistorNPN::paint(QPainter *painter, const QStyleOptionGraphicsItem *, Q
     painter->drawPolygon(arrow);
 
     painter->drawText(-25, -20, name());
+    paintSelectionOverlay(painter, option);
 }
 
 // پیاده‌سازی متد کلون برای ترانزیستور
