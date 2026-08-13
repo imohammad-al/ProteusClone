@@ -240,7 +240,10 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
     QSet<Node *> groundNodes;
     UnionFind uf;
 
-    const QList<Component *> comps = scene->components();
+    // بخش ۱ درخواست کاربر: قطعات بیرون از کادر آبی نباید در معادلات آنالوگ
+    // شرکت کنند - دقیقاً همان componentsInSchematic که SimulationEngine برای
+    // چرخه دیجیتال استفاده می‌کند (به circuitscene.h/cpp نگاه کنید).
+    const QList<Component *> comps = scene->componentsInSchematic();
     for (Component *c : comps) {
         if (!c)
             continue;

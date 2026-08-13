@@ -29,8 +29,12 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
-    // برای اتصال به دیالوگ شروع برنامه (بخش ۱ مستند پروژه) - main.cpp این دو تابع را
-    // بر اساس انتخاب کاربر در StartupDialog صدا می‌زند
+    // برای اتصال به صفحه شروع برنامه (بخش ۱ مستند پروژه) - main.cpp این دو تابع را
+    // بر اساس انتخاب کاربر در StartScreen صدا می‌زند. توجه: در جریان فعلی
+    // (نگاه کن main.cpp)، چون StartScreen/NewProjectWizard همیشه یک فایل واقعی
+    // روی دیسک برمی‌گردانند، فقط openProjectFile() صدا زده می‌شود؛ setCanvasSize()
+    // برای استفاده‌های آینده (مثلاً یک منوی Page Setup برای تغییر اندازه بومِ
+    // یک پروژه‌ی از قبل بازشده) نگه داشته شده است.
     void openProjectFile(const QString &path);
     void setCanvasSize(const QSize &size);
 protected:

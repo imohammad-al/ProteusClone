@@ -6,6 +6,7 @@
 #include <QGraphicsScene>
 #include <QString>
 #include <QMap>
+#include <QRectF>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -59,6 +60,25 @@ public:
 
     // --- پاک‌سازی کامل مدار (قطعات، سیم‌ها، گره‌ها) برای پروژه جدید یا بارگذاری ---
     void resetCircuit();
+
+    // --- محدوده شماتیک/کادر آبی (بخش ۱ درخواست کاربر) ---
+    // اندازه‌اش دقیقاً برابر اندازه‌ای است که کاربر در StartupDialog (یا فایل پروژه
+    // بارگذاری‌شده) انتخاب کرده. این متد sceneRect صحنه را هم خودکار بزرگ‌تر از این
+    // کادر تنظیم می‌کند تا پس‌زمینه شطرنجی دور کادر هم قابل مشاهده/اسکرول باشد.
+    void setSchematicRect(const QRectF &rect);
+    QRectF schematicRect() const { return m_schematicRect; }
+
+    // آیا یک قطعه (بر اساس مرکز مستطیل صحنه‌ای‌اش) داخل کادر آبی است؟ ملاک تصمیم
+    // «مرکز» است نه کل bounding rect، تا قطعاتی که فقط لبه‌شان کمی از کادر بیرون
+    // زده به‌طور غافلگیرکننده‌ای از شبیه‌سازی حذف نشوند.
+    bool isWithinSchematicBounds(const Component *component) const;
+
+    // فقط قطعات داخل کادر آبی - SimulationEngine و AnalogSolver برای اجرای واقعی
+    // شبیه‌سازی از این متد استفاده می‌کنند (نه components()) تا قطعات بیرون از کادر
+    // در شبیه‌سازی شرکت داده نشوند. Save/Load و DRC کماکان از components() کامل
+    // استفاده می‌کنند - قطعات بیرون کادر باید ذخیره/بارگذاری و بررسی DRC بشوند،
+    // فقط در چرخه شبیه‌سازی شرکت نمی‌کنند.
+    QList<Component*> componentsInSchematic() const;
 
 protected:
     void drawBackground(QPainter *painter,
@@ -125,6 +145,11 @@ private:
 
     // ردیابی مرکزی همه سیم‌های مدار (برای DRC، Serializer و حذف تمیز)
     QList<Wire*> m_wires;
+
+    // محدوده شماتیک/کادر آبی فعلی (بخش ۱ درخواست کاربر) - پیش‌فرض نامعتبر تا
+    // setSchematicRect صدا زده شود؛ MainWindow همیشه در سازنده یک مقدار پیش‌فرض
+    // (۳۰۰۰x۳۰۰۰) تنظیم می‌کند، پس در عمل همیشه معتبر است.
+    QRectF m_schematicRect;
 };
 
 #endif

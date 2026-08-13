@@ -12,6 +12,7 @@
 #include "commands/addwirecommand.h"
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QDebug>
 #include <QSet>
 #include "net.h"
@@ -35,6 +36,9 @@ void CircuitScene::drawBackground(QPainter *painter,
 {
     QGraphicsScene::drawBackground(painter, rect);
 
+    // ---- ۱. صفحه شطرنجی/گرید در کل ناحیه قابل مشاهده (بخش ۱ درخواست کاربر) ----
+    // این گرید در همه‌جای صحنه رسم می‌شود، نه فقط داخل کادر شماتیک - یعنی حتی
+    // ناحیه‌ی اضافه‌شده برای اسکرول/جابجایی بیرون از کادر آبی هم صفحه‌ی شطرنجی دارد.
     const int gridSize = 20;
 
     painter->setPen(QColor(230,230,230));
@@ -57,6 +61,67 @@ void CircuitScene::drawBackground(QPainter *painter,
                           rect.right(),
                           y);
     }
+
+    // ---- ۲. کادر آبی محدوده شماتیک (بخش ۱ درخواست کاربر) ----
+    // اندازه‌اش دقیقاً همان مقداری است که کاربر در StartupDialog انتخاب کرده
+    // (setSchematicRect از MainWindow صدا زده می‌شود). قطعاتی که خارج از این کادر
+    // قرار بگیرند در شبیه‌سازی شرکت داده نمی‌شوند (SimulationEngine/AnalogSolver -
+    // به componentsInSchematic() نگاه کنید)، پس دیدن مرز آن روی بوم برای کاربر مهم است.
+    if (m_schematicRect.isValid()) {
+        // ناحیه بیرون از کادر را کمی سایه‌دار کن تا محدوده قابل‌شبیه‌سازی از حاشیه
+        // اضافه‌شده برای جابجایی/اسکرول به‌وضوح متمایز باشد (خط‌های گرید هنوز از
+        // زیر این سایه‌ی نیمه‌شفاف دیده می‌شوند).
+        QPainterPath outsidePath;
+        outsidePath.addRect(rect);
+        QPainterPath insidePath;
+        insidePath.addRect(m_schematicRect);
+
+        painter->setPen(Qt::NoPen);
+        painter->setBrush(QColor(0, 0, 0, 18));
+        painter->drawPath(outsidePath.subtracted(insidePath));
+
+        // مرز آبی خودِ کادر - با قلم Cosmetic تا ضخامت آن در هر سطح زومی ثابت بماند.
+        QPen borderPen(QColor(30, 90, 220));
+        borderPen.setWidth(2);
+        borderPen.setCosmetic(true);
+        painter->setPen(borderPen);
+        painter->setBrush(Qt::NoBrush);
+        painter->drawRect(m_schematicRect);
+    }
+}
+
+// --- تنظیم/تغییر محدوده شماتیک (کادر آبی) - بخش ۱ درخواست کاربر ---
+void CircuitScene::setSchematicRect(const QRectF &rect)
+{
+    m_schematicRect = rect;
+
+    // sceneRect واقعی صحنه را کمی بزرگ‌تر از کادر شماتیک تنظیم می‌کنیم تا صفحه
+    // شطرنجی پس‌زمینه در اطراف کادر هم دیده/اسکرول شود (حداقل ۵۰۰ پیکسل یا ۴۰٪
+    // اندازه هر بعد، هرکدام بزرگ‌تر بود).
+    const qreal padX = qMax<qreal>(500.0, rect.width() * 0.4);
+    const qreal padY = qMax<qreal>(500.0, rect.height() * 0.4);
+    setSceneRect(rect.adjusted(-padX, -padY, padX, padY));
+
+    update();
+}
+
+bool CircuitScene::isWithinSchematicBounds(const Component *component) const
+{
+    if (!component || !m_schematicRect.isValid())
+        return false;
+
+    return m_schematicRect.contains(component->sceneBoundingRect().center());
+}
+
+QList<Component*> CircuitScene::componentsInSchematic() const
+{
+    QList<Component*> result;
+    const QList<Component*> all = components();
+    for (Component *c : all) {
+        if (isWithinSchematicBounds(c))
+            result.append(c);
+    }
+    return result;
 }
 
 //////////////////////////////////////////////////////////
@@ -754,10 +819,13 @@ void CircuitScene::handlePlaceComponentToolPress(QGraphicsSceneMouseEvent *event
             addItem(item);
         }
 
-        // --- اسنپ خودکار پین به نزدیک‌ترین سیم (بخش ۲ درخواست کاربر) ---
+        // --- اسنپ خودکار پین به نزدیک‌ترین سیم (بخش ۳ درخواست کاربر) ---
         // اگر یکی از پایه‌های قطعه تازه‌قرارگرفته به فاصله نزدیک یک سیم موجود باشد،
         // به‌جای رها کردن قطعه بدون اتصال، به‌صورت خودکار یک سیم جدید از آن پایه به
         // نزدیک‌ترین سر آن سیم (شروع یا پایان) رسم می‌شود تا در همان گره/شبکه قرار گیرد.
+        // هر پایه‌ی قطعه مستقل بررسی می‌شود (نه فقط اولین‌مورد پیداشده) چون کاربر
+        // صریحاً خواسته «پین‌ها» (جمع) روی خطوط بنشینند - دقیقاً همان چیزی که برای
+        // جاگذاری یک قطعه دوسر (مثل مقاومت) بین دو سیم موجود لازم است.
         if (Component *newComp = dynamic_cast<Component*>(item)) {
             constexpr qreal kWireSnapDistance = 15.0;
             for (Pin *p : newComp->pins()) {
@@ -770,7 +838,6 @@ void CircuitScene::handlePlaceComponentToolPress(QGraphicsSceneMouseEvent *event
                         if (m_undoStack)
                             m_undoStack->push(new AddWireCommand(this, newWire));
                     }
-                    break; // فقط یک اتصال خودکار به ازای هر قرار دادن (بدون رشته سیم‌های ناخواسته)
                 }
             }
         }

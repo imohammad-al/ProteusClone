@@ -21,6 +21,16 @@ static bool nearlyEqual(double a, double b, double relTol, double absTol) {
 static bool runNpnFixedBiasTest(const char *label, double vccVolts, double rbOhms, double rcOhms,
                                  double expVBase, double expVColl, double expIb, double expIc) {
     CircuitScene scene;
+    // یکپارچه‌سازی: AnalogSolver از componentsInSchematic() استفاده می‌کند نه
+    // components() خام (به circuitscene.h/cpp و sim/analogsolver.cpp نگاه
+    // کنید) - در برنامه‌ی واقعی MainWindow همیشه یک کادر شماتیک معتبر تنظیم
+    // می‌کند، ولی این تست مستقل هیچ‌وقت از MainWindow عبور نمی‌کند. قطعات این
+    // تست هیچ‌وقت setPos نمی‌شوند و دقیقاً روی مبدأ (۰,۰) می‌مانند؛ چون
+    // boundingRect هر قطعه حول مبدأ محلی‌اش متقارن (نه لزوماً از ۰,۰ شروع)
+    // است، کادر شماتیک باید حول مبدأ صحنه هم مرکز باشد وگرنه مرکز برخی قطعات
+    // (مثل ترانزیستور/Ground) درست روی لبه کادر می‌افتد و بیرون از آن حساب
+    // می‌شود.
+    scene.setSchematicRect(QRectF(-50000, -50000, 100000, 100000));
     Ground *gnd = new Ground();
     DCVoltage *vcc = new DCVoltage();
     vcc->setProperty("voltage", vccVolts);
@@ -81,6 +91,7 @@ static bool runNpnFixedBiasTest(const char *label, double vccVolts, double rbOhm
 // به زمین. مقدار مرجع مستقل: حل معادله شاکلی با نیوتن ساده در پایتون. ---
 static bool runDiodeRegressionTest() {
     CircuitScene scene;
+    scene.setSchematicRect(QRectF(-50000, -50000, 100000, 100000)); // نگاه کنید به توضیح بالا
     Ground *gnd = new Ground();
     DCVoltage *v = new DCVoltage();
     v->setProperty("voltage", 5.0);

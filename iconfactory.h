@@ -19,6 +19,9 @@ public:
     static QIcon saveAsIcon();
     static QIcon exportImageIcon();
 
+    // --- Start Screen ---
+    static QIcon templatesIcon(); // آیکون گزینه «Template» در صفحه Start و کارت «Create Schematic» در ویزارد پروژه جدید
+
     // --- Edit ---
     static QIcon undoIcon();
     static QIcon redoIcon();

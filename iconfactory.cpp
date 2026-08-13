@@ -118,6 +118,27 @@ QIcon IconFactory::exportImageIcon()
     return QIcon(pm);
 }
 
+// ============================= Start Screen =============================
+
+QIcon IconFactory::templatesIcon()
+{
+    // چهار کاشی کوچک (شبیه گالری قالب) که یکی از آن‌ها با رنگ تاکیدی پر شده -
+    // برای دکمه «Template» در صفحه Start و کارت «Create Schematic» در ویزارد.
+    QPixmap pm = blankCanvas();
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(kInk, 1.4));
+
+    p.setBrush(kAccent);
+    p.drawRoundedRect(QRectF(3, 3, 8, 8), 1.5, 1.5);
+
+    p.setBrush(Qt::white);
+    p.drawRoundedRect(QRectF(13, 3, 8, 8), 1.5, 1.5);
+    p.drawRoundedRect(QRectF(3, 13, 8, 8), 1.5, 1.5);
+    p.drawRoundedRect(QRectF(13, 13, 8, 8), 1.5, 1.5);
+    return QIcon(pm);
+}
+
 // ============================= Edit =============================
 
 QIcon IconFactory::undoIcon()

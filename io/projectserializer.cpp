@@ -25,6 +25,12 @@ bool ProjectSerializer::save(CircuitScene *scene, const QString &filePath, QStri
     QJsonObject root;
     root["formatVersion"] = kProjectFormatVersion;
 
+    // --- ۰. اندازه کادر شماتیک/آبی (بخش ۱ درخواست کاربر) - تا بعد از Save/Load
+    //     دوباره کادر با همان اندازه‌ای که کاربر در StartupDialog انتخاب کرده بازسازی شود ---
+    const QRectF schematicRect = scene->schematicRect();
+    root["canvasWidth"] = schematicRect.width();
+    root["canvasHeight"] = schematicRect.height();
+
     // --- ۱. سریالایز کردن قطعات (Component::toJson از قبل id/name/type/category/x/y/rotation/properties را می‌نویسد) ---
     QJsonArray componentsArray;
     const QList<Component*> comps = scene->components();
@@ -100,6 +106,14 @@ bool ProjectSerializer::load(CircuitScene *scene, const QString &filePath, QStri
 
     // پاک کردن کامل مدار فعلی قبل از بازسازی (رفع نشتی حافظه Node/Net + Component/Wire قدیمی)
     scene->resetCircuit();
+
+    // --- ۰. بازسازی اندازه کادر شماتیک/آبی (بخش ۱ درخواست کاربر) ---
+    // اگر فایل پروژه قدیمی این فیلدها را نداشته باشد (نسخه قبل از این تغییر)،
+    // اندازه فعلی کادر (هرچه از قبل روی scene تنظیم بوده) دست‌نخورده باقی می‌ماند.
+    const double canvasWidth = root.value("canvasWidth").toDouble(-1.0);
+    const double canvasHeight = root.value("canvasHeight").toDouble(-1.0);
+    if (canvasWidth > 0.0 && canvasHeight > 0.0)
+        scene->setSchematicRect(QRectF(0, 0, canvasWidth, canvasHeight));
 
     // --- ۱. بازسازی قطعات با استفاده از ComponentFactory (بر اساس همان نامی که در LibraryManager ثبت شده) ---
     QHash<QString, Component*> idToComponent;

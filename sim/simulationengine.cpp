@@ -73,7 +73,10 @@ void SimulationEngine::tick()
         SimulationLogger::instance().log(LogLevel::Warning, analogError);
     }
 
-    const QList<Component*> comps = m_scene->components();
+    // بخش ۱ درخواست کاربر: فقط قطعات داخل کادر آبی/محدوده شماتیک در شبیه‌سازی
+    // شرکت می‌کنند (componentsInSchematic نه components خام - قطعات بیرون کادر
+    // کماکان برای Save/Load و DRC در components() کامل باقی می‌مانند).
+    const QList<Component*> comps = m_scene->componentsInSchematic();
     for (Component *c : comps) {
         if (DigitalComponent *dc = dynamic_cast<DigitalComponent*>(c))
             dc->simulationTick();
@@ -93,7 +96,8 @@ void SimulationEngine::resetAllComponents()
 {
     if (!m_scene) return;
 
-    const QList<Component*> comps = m_scene->components();
+    // همان محدودیت بالا: فقط قطعات داخل کادر آبی بازنشانی می‌شوند.
+    const QList<Component*> comps = m_scene->componentsInSchematic();
     for (Component *c : comps) {
         if (DigitalComponent *dc = dynamic_cast<DigitalComponent*>(c))
             dc->resetSimulation();

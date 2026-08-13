@@ -33,8 +33,12 @@ void CircuitGraphicsView::resetZoom()
 
 void CircuitGraphicsView::wheelEvent(QWheelEvent *event)
 {
-    if (event->modifiers() & Qt::ControlModifier) {
-        const qreal factor = (event->angleDelta().y() > 0) ? 1.15 : (1.0 / 1.15);
+    // بخش ۲ درخواست کاربر: چرخاندن ساده چرخ‌ماوس روی بوم (بدون نیاز به نگه‌داشتن
+    // Ctrl) باید zoom in/out کند - دقیقاً مثل رفتار پیش‌فرض خودِ Proteus. مرکز زوم
+    // زیر نشانگر ماوس می‌ماند چون AnchorUnderMouse در سازنده تنظیم شده است.
+    const int delta = event->angleDelta().y();
+    if (delta != 0) {
+        const qreal factor = (delta > 0) ? 1.15 : (1.0 / 1.15);
         applyZoom(factor);
         event->accept();
         return;

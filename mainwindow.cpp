@@ -7,6 +7,8 @@
 #include "iconfactory.h"
 #include "pickdevicesdialog.h"
 #include "io/projectserializer.h"
+#include "recentprojectsmanager.h"
+#include "logofactory.h"
 #include "sim/designrulechecker.h"
 #include "sim/simulationlogger.h"
 #include "sim/simulationengine.h"
@@ -36,6 +38,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    setWindowIcon(LogoFactory::icon());
+
     //-----------------------------------------
     // Component Library
     //-----------------------------------------
@@ -62,7 +66,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     scene->setUndoStack(undoStack);
 
-    scene->setSceneRect(0,0,3000,3000);
+    // مقدار پیش‌فرض کادر شماتیک/آبی (بخش ۱ درخواست کاربر) - اگر main.cpp بلافاصله
+    // setCanvasSize واقعی را با انتخاب کاربر صدا نزند (مثلاً هنگام Open Existing
+    // یک پروژه قدیمی که اندازه‌ی کادر را ذخیره نکرده)، همین مقدار باقی می‌ماند.
+    setCanvasSize(QSize(3000, 3000));
 
     simEngine = new SimulationEngine(scene, this);
     connect(simEngine, &SimulationEngine::stateChanged,
@@ -516,6 +523,10 @@ void MainWindow::openProjectFile(const QString &path)
         SimulationLogger::instance().clear();
         SimulationLogger::instance().log(LogLevel::Info,
             tr("پروژه با موفقیت بارگذاری شد: %1").arg(path));
+        // ثبت در فهرست «پروژه‌های اخیر» صفحه Start - این تنها نقطه‌ای است که
+        // هر بار یک پروژه با موفقیت باز می‌شود (چه از StartScreen موقع اجرای
+        // برنامه، چه بعداً از منوی File > Open) از آن عبور می‌کند.
+        RecentProjectsManager::addRecentProject(path);
     } else {
         QMessageBox::warning(this, tr("خطا در بارگذاری"), error);
     }
@@ -523,7 +534,11 @@ void MainWindow::openProjectFile(const QString &path)
 
 void MainWindow::setCanvasSize(const QSize &size)
 {
-    scene->setSceneRect(0, 0, size.width(), size.height());
+    // کادر آبی (محدوده قابل‌شبیه‌سازی) دقیقاً هم‌اندازه با مقدار انتخاب‌شده کاربر
+    // در StartupDialog می‌شود؛ خودِ CircuitScene::setSchematicRect هم sceneRect
+    // واقعی صحنه را برای نمایش پس‌زمینه شطرنجی اطراف کادر بزرگ‌تر تنظیم می‌کند
+    // (بخش ۱ درخواست کاربر).
+    scene->setSchematicRect(QRectF(0, 0, size.width(), size.height()));
 }
 
 void MainWindow::on_actionSave_triggered()
@@ -560,6 +575,7 @@ void MainWindow::on_actionSaveAs_triggered()
         updateWindowTitle();
         SimulationLogger::instance().log(LogLevel::Info,
             tr("پروژه ذخیره شد: %1").arg(path));
+        RecentProjectsManager::addRecentProject(path); // ثبت در فهرست پروژه‌های اخیر صفحه Start
     } else {
         QMessageBox::warning(this, tr("خطا در ذخیره‌سازی"), error);
     }
