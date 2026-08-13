@@ -406,19 +406,6 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
             if (groundNodes.contains(n))
                 localGround.insert(n);
 
-        if (localGround.isEmpty()) {
-            failureReasons << QObject::tr("یک زیرمدار بدون هیچ Ground‌ای پیدا شد - ولتاژش قابل محاسبه نیست.");
-            allGroupsOk = false;
-            continue; // گره‌های این گروه hasVoltage=false باقی می‌مانند (بالا پاک شدند)
-        }
-
-        QHash<Node *, int> nodeIndex;
-        int nextIndex = 0;
-        for (Node *n : groupNodes)
-            if (!localGround.contains(n))
-                nodeIndex.insert(n, nextIndex++);
-        const int nodeCount = nextIndex;
-
         QVector<ResistorElement> localResistors;
         for (const ResistorElement &r : resistors)
             if (uf.find(r.a) == groupRoot)
@@ -448,6 +435,41 @@ bool AnalogSolver::solve(CircuitScene *scene, QString *errorMessage)
         for (const TransistorElement &t : transistors)
             if (uf.find(t.base) == groupRoot)
                 localTransistors.append(t);
+
+        if (localGround.isEmpty()) {
+            // 🔴 رفع باگ: قبلاً هر زیرمدار بدون Ground - حتی یک منبع ولتاژ تنها که
+            // مستقیم به ورودی گیت‌های منطقی وصل شده (بدون هیچ مقاومت/خازن/دیودی) -
+            // باعث یک پیام خطای «بدون Ground» در هر تیک می‌شد. این پیام گمراه‌کننده
+            // بود چون مقدار دیجیتال (LogicValue) این گیت‌ها اصلاً به حل آنالوگ
+            // وابسته نیست و کاملاً درست کار می‌کرد؛ فقط ولتاژ *مطلق* واقعاً بدون
+            // Ground قابل تعیین نیست. اگر این زیرمدار هیچ عنصر آنالوگ واقعی (که
+            // واقعاً به ولتاژ حل‌شده نیاز داشته باشد) نداشته باشد - یعنی فقط منبع(ها)
+            // مستقیم به مصرف‌کننده‌های دیجیتال (گیت/LED/سوییچ) وصل شده‌اند - بی‌سروصدا
+            // از حل آنالوگ صرف‌نظر می‌کنیم (شبیه‌سازی دیجیتال دست‌نخورده ادامه پیدا
+            // می‌کند)؛ فقط وقتی واقعاً یک مقاومت/خازن/سلف/دیود/ترانزیستور یا
+            // آمپرمتر/DAC در این زیرمدار باشد که بدون مرجع ولتاژ واقعاً قابل حل
+            // نیست، خطای واقعی گزارش می‌شود.
+            bool hasRealAnalogLoad = !localResistors.isEmpty() || !localCapacitors.isEmpty()
+                || !localInductors.isEmpty() || !localDiodes.isEmpty() || !localTransistors.isEmpty();
+            if (!hasRealAnalogLoad) {
+                for (const SourceElement &s : localSources) {
+                    if (s.ammeterOwner) { hasRealAnalogLoad = true; break; }
+                }
+            }
+
+            if (hasRealAnalogLoad) {
+                failureReasons << QObject::tr("یک زیرمدار بدون هیچ Ground‌ای پیدا شد - ولتاژش قابل محاسبه نیست.");
+                allGroupsOk = false;
+            }
+            continue; // گره‌های این گروه hasVoltage=false باقی می‌مانند (بالا پاک شدند)
+        }
+
+        QHash<Node *, int> nodeIndex;
+        int nextIndex = 0;
+        for (Node *n : groupNodes)
+            if (!localGround.contains(n))
+                nodeIndex.insert(n, nextIndex++);
+        const int nodeCount = nextIndex;
 
         const int sourceCount = localSources.size();
         const int inductorCount = localInductors.size();
